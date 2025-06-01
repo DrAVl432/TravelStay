@@ -5,7 +5,7 @@ services:
     environment:
       - MONGO_URL=mongodb://mongodb:27017/Travel   # пробрасываем наружную во внутреннюю
     ports:
-      - "3002:3002"
+      - "3000:3000"
     depends_on:
       - mongodb
   mongodb:

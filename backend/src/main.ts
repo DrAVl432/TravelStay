@@ -1,9 +1,15 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+   import { NestFactory } from '@nestjs/core';
+   import { AppModule } from './app.module';
+   import { ValidationPipe } from '@nestjs/common';
 
-async function bootstrap() {
+   async function bootstrap() {
      const app = await NestFactory.create(AppModule);
      app.setGlobalPrefix('api');
-     await app.listen(process.env.HTTP_PORT || 3002, process.env.HTTP_HOST || '0.0.0.0');
-}
-bootstrap();
+     app.useGlobalPipes(new ValidationPipe({
+       whitelist: true,          // отбрасывает все неописанные в DTO поля
+       forbidNonWhitelisted: true, // отдаёт 400, если пришло нежданное поле
+       transform: true,
+     }));
+     await app.listen(process.env.PORT || 3000);
+   }
+   bootstrap();

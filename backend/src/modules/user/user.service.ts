@@ -1,10 +1,10 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import { Model } from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SearchUserParams } from './dto/search-user-params.dto';
-import { UserRole } from './enums/user-role.enum';  // <-- новый путь
+import { UserRole } from './enums/user-role.enum';
 import { hash } from 'bcryptjs';
 
 @Injectable()
@@ -16,14 +16,24 @@ export class UserService {
   async create(data: CreateUserDto): Promise<User> {
     // Проверка на уникальность email
     const exists = await this.userModel.findOne({ email: data.email });
-    if (exists) throw new ConflictException('Email already exists');
+    if (exists) {
+      throw new ConflictException('Email already exists');
+    }
+
+    // Проверка на существование пароля
+    if (!data.password) {
+      throw new BadRequestException('Password is required');
+    }
+
+    // Логирование пароля перед хешированием для отладки
+    console.log('Password to hash:', data.password);
 
     const passwordHash = await hash(data.password, 10);
 
     const user = new this.userModel({
       ...data,
       passwordHash,
-      role: data.role ?? UserRole.CLIENT, // роль по умолчанию
+      role: data.role ?? UserRole.CLIENT, // Роль по умолчанию
     });
 
     return user.save();
