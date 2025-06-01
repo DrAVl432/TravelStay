@@ -8,19 +8,19 @@ export type UserDocument = User & Document;
 })
 export class User {
   @Prop({ required: true, unique: true })
-  email: string;
+  email!: string;
 
   @Prop({ required: true })
-  passwordHash: string;
+  passwordHash!: string;
 
   @Prop({ required: true })
-  name: string;
+  name!: string;
 
   @Prop()
   contactPhone?: string;
 
   @Prop({ required: true, enum: ['client', 'admin', 'manager'], default: 'client' })
-  role: string;
+  role!: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

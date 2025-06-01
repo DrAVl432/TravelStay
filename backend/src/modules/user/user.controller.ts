@@ -11,7 +11,7 @@ export class UserController {
   async create(@Body() createUserDto: CreateUserDto) {
     const user = await this.userService.create(createUserDto);
     // Не возвращаем hash, только "безопасные" поля
-    const { passwordHash, ...safe } = user.toObject();
+    const { passwordHash, ...safe } = user; // Мы можем использовать user напрямую
     return safe;
   }
 
@@ -19,7 +19,7 @@ export class UserController {
   async findAll(@Query() params: SearchUserParams) {
     const users = await this.userService.findAll(params);
     return users.map(u => {
-      const { passwordHash, ...safe } = u.toObject();
+      const { passwordHash, ...safe } = u; // Мы можем использовать u напрямую
       return safe;
     });
   }
@@ -28,7 +28,7 @@ export class UserController {
   async findById(@Param('id') id: string) {
     const user = await this.userService.findById(id);
     if (!user) return null;
-    const { passwordHash, ...safe } = user.toObject();
+    const { passwordHash, ...safe } = user; // Мы можем использовать user напрямую
     return safe;
   }
 }
