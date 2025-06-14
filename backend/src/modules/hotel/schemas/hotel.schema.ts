@@ -12,6 +12,12 @@ export class Hotel {
 
   @Prop()
   description?: string;
+
+  @Prop({ required: true, default: Date.now }) // createdAt
+  createdAt!: Date;
+
+  @Prop({ required: true, default: Date.now }) // updatedAt
+  updatedAt!: Date;
 }
 
 export const HotelSchema = SchemaFactory.createForClass(Hotel);
