@@ -1,12 +1,15 @@
-import { IsMongoId, IsDateString } from 'class-validator';
+import { IsMongoId, IsDateString, IsNotEmpty } from 'class-validator';
 
 export class ReservationDto {
+  @IsNotEmpty()
   @IsMongoId()
   userId!: string;
 
+  @IsNotEmpty()
   @IsMongoId()
   hotelId!: string;
 
+  @IsNotEmpty()
   @IsMongoId()
   roomId!: string;
 
