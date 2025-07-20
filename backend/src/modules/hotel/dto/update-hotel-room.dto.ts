@@ -6,7 +6,7 @@ export class UpdateHotelRoomDto {
   description?: string;
 
   @IsOptional()
-  images?: string[];
+  images?: string;
 
   @IsOptional()
   @IsBoolean()

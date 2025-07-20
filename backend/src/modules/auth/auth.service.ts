@@ -8,13 +8,14 @@ import { hash, compare } from 'bcryptjs';
 export class AuthService {
     constructor(private userService: UserService) {}
 
-    async login(email: string, password: string): Promise<User | null> {
-    const user = await this.userService.findByEmail(email);
-    if (!user || !(await compare(password, user.passwordHash))) {
-        return null; // Возвращаем null, если пользователь не найден или пароль неверный
-    }
-    return user;
-}
+   async login(email: string, password: string): Promise<User | null> {
+       const user = await this.userService.findByEmail(email);
+       console.log('findByEmail result:', user); // Логирование результата
+       if (!user || !(await compare(password, user.passwordHash))) {
+           return null; 
+       }
+       return user;
+   }
 
     async logout(userId: string): Promise<void> {
         // Удаление сессии или логика выхода

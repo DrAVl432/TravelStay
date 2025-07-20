@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "tsc: build",
+            "type": "typescript",
+            "tsconfig": "backend/tsconfig.json", // Укажите правильный путь к вашему tsconfig.json файлу
+            "problemMatcher": ["$tsc"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

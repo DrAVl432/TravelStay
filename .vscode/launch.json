@@ -1,0 +1,34 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+    "type": "node",
+    "request": "launch",
+    "name": "Запуск бэкенда с ts-node",
+    "program": "${workspaceFolder}/backend/src/main.ts", // Путь к точке входа вашего приложения NestJS
+    //"preLaunchTask": "build", // Запуск компиляции перед отладкой
+    "sourceMaps": true,
+    "cwd": "${workspaceFolder}/backend",
+    "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+    ],
+    "env": {
+        "NODE_ENV": "development",
+        "HTTP_HOST": "localhost",
+        "HTTP_PORT": "3000",
+        "MONGO_URL": "mongodb://localhost:27017/Travel",
+        "SESSION_SECRET": "your-session-secret"
+    },
+    "console": "integratedTerminal"
+},
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Запуск фронтенда",
+            "url": "http://localhost:3050", // URL вашего фронтенд-приложения
+            "webRoot": "${workspaceFolder}/frontend", // Путь к папке с фронтенд-кодом
+            "sourceMaps": true
+        }
+    ]
+}

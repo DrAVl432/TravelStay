@@ -18,7 +18,7 @@ export class HotelService {
       throw new ConflictException('Hotel title already exists');
     }
 
-    const hotel = new this.hotelModel(data);
+    const hotel = new this.hotelModel({ ...data, images: data.images });
     return hotel.save();
   }
 

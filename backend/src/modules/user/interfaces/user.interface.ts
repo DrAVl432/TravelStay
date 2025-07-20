@@ -1,9 +1,12 @@
-import { User } from '../schemas/user.schema';
+//user.interface.ts
+import { User, UserDocument } from '../schemas/user.schema';
 import { SearchUserParams } from '../dto/search-user-params.dto';
+//import { UpdateUserDto } from '../dto/update-user.dto';
 
 export interface IUserService {
-  create(data: Partial<User>): Promise<User>;
-  findById(id: string): Promise<User | null>;
-  findByEmail(email: string): Promise<User | null>;
-  findAll(params: SearchUserParams): Promise<User[]>;
+  create(data: Partial<UserDocument >): Promise<UserDocument >;
+  findById(_id: string): Promise<UserDocument  | null>;
+  findByEmail(email: string): Promise<UserDocument  | null>;
+  findAll(params: SearchUserParams): Promise<UserDocument []>;
+  
 }

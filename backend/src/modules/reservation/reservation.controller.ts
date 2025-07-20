@@ -2,6 +2,7 @@ import { Controller, Post, Body, Delete, Get, Query, Param } from '@nestjs/commo
 import { ReservationService } from './reservation.service';
 import { ReservationDto } from './dto/reservation.dto';
 import { ReservationSearchOptions } from './dto/reservation-search-options.dto';
+import { ReservationSearchHotels, ReservationSearchHotel, ReservationSearchHotelsData } from './dto/reservation-search-hotels.dto';
 
 @Controller('reservations')
 export class ReservationController {
@@ -21,4 +22,16 @@ export class ReservationController {
   async findAll(@Query() filter: ReservationSearchOptions) {
     return this.reservationService.getReservations(filter);
   }
+@Get('hotels')
+async findAllHotels(@Query() filter: ReservationSearchHotels) {
+    return this.reservationService.getReservationsByHotels(filter);
+}
+@Get('hotel')
+async findAHotel(@Query() filter: ReservationSearchHotel) {
+    return this.reservationService.getReservationsByHotel(filter);
+}
+@Get('hotelsdata')
+async findAllHotelsData(@Query() filter: ReservationSearchHotelsData) {
+    return this.reservationService.getReservationsByHotelData(filter);
+}
 }

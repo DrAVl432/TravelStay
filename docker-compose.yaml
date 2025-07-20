@@ -1,0 +1,29 @@
+services:
+  travelstay-backend:
+    build: ./backend   # Убедитесь, что эта папка существует
+    env_file: .env
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/Travel
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: Travel
+    volumes:
+      - ./mongo-data:/data/db
+
+  travelstay-frontend:
+    build: ./frontend   # Убедитесь, что эта папка существует
+    ports:
+      - "3001:3001"
+    depends_on:
+      - travelstay-backend
+    environment:
+      - REACT_APP_API_URL=http://travelstay-backend:3000

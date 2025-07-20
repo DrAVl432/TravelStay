@@ -9,3 +9,6 @@ export interface IHotelService {
   search(params: SearchHotelParams): Promise<Hotel[]>;
   update(id: string, data: UpdateHotelDto): Promise<Hotel>;
 }
+export interface HotelWithId extends Hotel {
+  id: string;
+}

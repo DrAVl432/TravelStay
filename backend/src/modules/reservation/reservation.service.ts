@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { Reservation, ReservationDocument } from './schemas/reservation.schema';
 import { ReservationDto } from './dto/reservation.dto';
 import { ReservationSearchOptions } from './dto/reservation-search-options.dto';
+import { ReservationSearchHotels, ReservationSearchHotel, ReservationSearchHotelsData } from './dto/reservation-search-hotels.dto';
 
 @Injectable()
 export class ReservationService {
@@ -42,8 +43,27 @@ async addReservation(data: ReservationDto): Promise<Reservation> {
   async getReservations(filter: ReservationSearchOptions): Promise<Reservation[]> {
     return this.reservationModel.find({
       userId: filter.userId,
-      dateStart: { $gte: filter.dateStart },
-      dateEnd: { $lte: filter.dateEnd },
+      dateStart: { $gte: new Date(filter.dateStart) },
+      dateEnd: { $lte: new Date(filter.dateEnd) },
+    }).exec();
+  }
+  async getReservationsByHotels(filter: ReservationSearchHotels): Promise<Reservation[]> {
+    return this.reservationModel.find({
+     hotelId: filter.hotelId,
+     dateStart: { $gte: new Date(filter.dateStart) },
+      dateEnd: { $lte: new Date(filter.dateEnd) },
+    }).exec();
+  }
+    async getReservationsByHotel(filter: ReservationSearchHotel): Promise<Reservation[]> {
+    return this.reservationModel.find({
+     hotelId: filter.hotelId,
+    
+    }).exec();
+  }
+    async getReservationsByHotelData(filter: ReservationSearchHotelsData): Promise<Reservation[]> {
+    return this.reservationModel.find({
+      dateStart: { $gte: new Date(filter.dateStart) },
+      dateEnd: { $lte: new Date(filter.dateEnd) },
     }).exec();
   }
 }

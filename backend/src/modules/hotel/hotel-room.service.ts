@@ -5,23 +5,22 @@ import { HotelRoom, HotelRoomDocument } from './schemas/hotel-room.schema';
 import { CreateHotelRoomDto } from './dto/create-hotel-room.dto';
 import { UpdateHotelRoomDto } from './dto/update-hotel-room.dto';
 import { SearchRoomsParams } from './dto/search-hotel-room-params.dto';
-import { Hotel } from './schemas/hotel.schema'; // Добавляем импорт модели Hotel
+import { Hotel } from './schemas/hotel.schema';
 
 @Injectable()
 export class HotelRoomService {
   constructor(
     @InjectModel(HotelRoom.name) private hotelRoomModel: Model<HotelRoom>,
-    @InjectModel(Hotel.name) private hotelModel: Model<Hotel>, // Инъекция модели Hotel
+    @InjectModel(Hotel.name) private hotelModel: Model<Hotel>,
   ) {}
 
   async create(data: CreateHotelRoomDto): Promise<HotelRoom> {
-    // Добавляем проверку существования Hotel
     const hotelExists = await this.hotelModel.findById(data.hotel);
     if (!hotelExists) {
       throw new NotFoundException('Hotel not found');
     }
 
-    const room = new this.hotelRoomModel(data);
+    const room = new this.hotelRoomModel({ ...data, images: data.images });
     return room.save();
   }
 

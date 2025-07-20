@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Body, Query, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { HotelRoomService } from './hotel-room.service';
 import { CreateHotelRoomDto } from './dto/create-hotel-room.dto';
-//import { UpdateHotelRoomDto } from './dto/update-hotel-room.dto';
 import { SearchRoomsParams } from './dto/search-hotel-room-params.dto';
 
 @Controller('hotel-rooms')
@@ -9,7 +9,11 @@ export class HotelRoomController {
   constructor(private readonly hotelRoomService: HotelRoomService) {}
 
   @Post()
-  async create(@Body() createHotelRoomDto: CreateHotelRoomDto) {
+  @UseInterceptors(FileInterceptor('images')) // Добавлено для загрузки изображения
+  async create(@Body() createHotelRoomDto: CreateHotelRoomDto, @UploadedFile() file: Express.Multer.File) {
+    if (file) {
+      createHotelRoomDto.images = file.path; // Сохранение пути к загруженному файлу
+    }
     return this.hotelRoomService.create(createHotelRoomDto);
   }
 
@@ -22,4 +26,14 @@ export class HotelRoomController {
   async findById(@Param('id') id: string) {
     return this.hotelRoomService.findById(id);
   }
+@Get('by-hotel/:hotelId')
+async findRoomsByHotel(
+    @Param('hotelId') hotelId: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+    @Query('isEnabled') isEnabled?: boolean,
+) {
+    const params: SearchRoomsParams = { hotel: hotelId, limit, offset, isEnabled };
+    return await this.hotelRoomService.search(params);
+}
 }

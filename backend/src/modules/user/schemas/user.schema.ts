@@ -1,5 +1,7 @@
+//user.schema.ts
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
+import { UserRole } from '../enums/user-role.enum';
 
 export type UserDocument = User & Document;
 
@@ -7,6 +9,11 @@ export type UserDocument = User & Document;
   timestamps: true, // createdAt, updatedAt
 })
 export class User {
+ @Prop({ type: Types.ObjectId, auto: true, required: true, }) 
+  id!: Types.ObjectId;
+
+  _id!: Types.ObjectId;
+
   @Prop({ required: true, unique: true })
   email!: string;
 
@@ -19,8 +26,8 @@ export class User {
   @Prop()
   contactPhone?: string;
 
-  @Prop({ required: true, enum: ['client', 'admin', 'manager'], default: 'client' })
-  role!: string;
+  @Prop({ required: true, enum: UserRole, default: UserRole.CLIENT }) 
+  role!: UserRole; 
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

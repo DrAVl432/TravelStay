@@ -8,4 +8,8 @@ export class UpdateHotelDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+    @IsOptional()
+  @IsString()
+  images?: string;
 }

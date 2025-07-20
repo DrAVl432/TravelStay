@@ -1,3 +1,4 @@
+//search-user-params.dto.ts
 import { IsOptional, IsString, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -23,4 +24,13 @@ export class SearchUserParams {
   @IsOptional()
   @IsString()
   contactPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
+  
+    @IsOptional()
+  @IsString()
+  id?: string;
+
 }

@@ -1,6 +1,6 @@
-import { IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsMongoId} from 'class-validator';
 import { Type } from 'class-transformer';
-import { IsMongoId } from 'class-validator'; // добавлено
+
 
 export class SearchRoomsParams {
   @IsOptional()

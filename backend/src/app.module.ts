@@ -26,6 +26,7 @@ import { AuthModule } from './modules/auth/auth.module';
     ReservationModule,
     SupportRequestModule,
     AuthModule,
+    
     // остальные модули
   ],
 })

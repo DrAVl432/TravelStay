@@ -11,7 +11,7 @@ export class CreateHotelRoomDto {
   description?: string;
 
   @IsOptional()
-  images?: string[] = [];
+  images?: string;
 
   @IsOptional()
   @IsBoolean()

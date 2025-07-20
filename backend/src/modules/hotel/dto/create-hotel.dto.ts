@@ -8,4 +8,8 @@ export class CreateHotelDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsString()
+  images?: string[];
+
 }

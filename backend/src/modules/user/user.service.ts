@@ -1,9 +1,11 @@
+//user.service.ts
 import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './schemas/user.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SearchUserParams } from './dto/search-user-params.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRole } from './enums/user-role.enum';
 import { hash } from 'bcryptjs';
 
@@ -13,7 +15,7 @@ export class UserService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
-  async create(data: CreateUserDto): Promise<User> {
+  async create(data: CreateUserDto): Promise<UserDocument> {
     // Проверка на уникальность email
     const exists = await this.userModel.findOne({ email: data.email });
     if (exists) {
@@ -39,26 +41,55 @@ export class UserService {
     return user.save();
   }
 
-  async findById(id: string): Promise<User | null> {
-    return this.userModel.findById(id).exec();
-  }
+ async findById(id: string): Promise<UserDocument | null> {
+  console.log("Искомый ID:", id);
+  console.log(`Проверка валидности ID: ${Types.ObjectId.isValid(id)}`);
+    if (!Types.ObjectId.isValid(id)) {
+      
+        console.log(`ID неверный: ${id}`);
+        return null; // Вы можете обработать ошибку, если идентификатор неверный
+    }
 
-  async findByEmail(email: string): Promise<User | null> {
+    const user = await this.userModel.findById(id).exec();
+    if (user) {
+        console.log(`Найден пользователь: ${user}`);
+    }
+           if (!user) {
+           console.log(`Пользователь не найден по ID: ${id}`);
+       }
+    return user;
+}
+
+  async findByEmail(email: string): Promise<UserDocument | null> {
     return this.userModel.findOne({ email }).exec();
   }
 
-  async findAll(params: SearchUserParams): Promise<User[]> {
+  async findAll(params: SearchUserParams): Promise<UserDocument[]> {
     const filter = [];
     if (params.email) filter.push({ email: { $regex: params.email, $options: 'i' } });
     if (params.name) filter.push({ name: { $regex: params.name, $options: 'i' } });
     if (params.contactPhone) filter.push({ contactPhone: { $regex: params.contactPhone, $options: 'i' } });
-
+    if (params.role) filter.push({ role: params.role });
     const query = filter.length > 0 ? { $and: filter } : {};
-
+    
     return this.userModel
       .find(query)
       .limit(params.limit ?? 0)
       .skip(params.offset ?? 0)
       .exec();
   }
+async updateUser(id: string, updateData: UpdateUserDto): Promise<UserDocument | null> {
+  const user = await this.userModel.findById(id).exec();
+  if (!user) return null;
+
+  // Проверка, изменился ли пароль
+  if (updateData.password) {
+    // Хешируем новый пароль
+    const passwordHash = await hash(updateData.password, 10);
+    user.passwordHash = passwordHash; // Записываем хешированный пароль
+  }
+
+  Object.assign(user, updateData);
+  return user.save();
+}
 }

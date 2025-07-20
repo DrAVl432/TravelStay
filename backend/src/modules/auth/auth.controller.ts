@@ -13,16 +13,31 @@ export class AuthController {
     async login(@Body() loginDto: LoginDto): Promise<any> {
         const user = await this.authService.login(loginDto.email, loginDto.password);
         
+        // Логирование пользователя для отладки
+        console.log('Logged in user:', user); // Логируем объект пользователя
+
         // Проверка на наличие пользователя
         if (!user) {
             throw new UnauthorizedException('Invalid email or password');
         }
 
-        return {
+            if (!user._id) {
+            console.error('User _id is undefined:', user);
+            throw new UnauthorizedException('User _id is undefined');
+        }
+
+        const response = {
+            id: user._id.toString(), // Преобразуем ObjectId в строку
             email: user.email,
             name: user.name,
             contactPhone: user.contactPhone,
+            role: user.role
         };
+
+        // Логируем ответ перед возвратом
+        console.log('Returning user data:', response); // Логируем данные пользователи, которые будут возвращены
+
+        return response;
     }
 
     @Post('logout')
