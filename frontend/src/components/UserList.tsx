@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { User } from '../../../backend/src/modules/user/schemas/user.schema'; 
-import { UserListApi } from '../API/UserList.api'; // Импортируем API
+import { UserListApi } from '../API/User/UserList.api'; // Импортируем API
 
 const UserList: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);

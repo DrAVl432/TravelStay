@@ -9,7 +9,7 @@ export type UserDocument = User & Document;
   timestamps: true, // createdAt, updatedAt
 })
 export class User {
- @Prop({ type: Types.ObjectId, auto: true, required: true, }) 
+ @Prop({ type: Types.ObjectId, auto: true }) 
   id!: Types.ObjectId;
 
   _id!: Types.ObjectId;

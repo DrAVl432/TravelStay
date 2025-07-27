@@ -11,4 +11,5 @@ export interface IHotelService {
 }
 export interface HotelWithId extends Hotel {
   id: string;
+  name: string;
 }

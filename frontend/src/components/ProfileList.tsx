@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ProfileListApi } from '../API/ProfileList.api'; 
+import { ProfileListApi } from '../API/User/ProfileList.api'; 
 import { User } from '../../../backend/src/modules/user/schemas/user.schema';
 
 const ProfileList: React.FC = () => {

@@ -14,3 +14,4 @@ export const HotelRoomsApi = {
         return await response.json();
     },
 };
+

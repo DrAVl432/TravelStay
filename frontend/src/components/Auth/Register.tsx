@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RegisterApi } from '../../API/Register.api';
+import { RegisterApi } from '../../API/AUT/Register.api';
 import { useAuth } from '../../context/AuthContext';
 
 const Register = () => {

@@ -1,5 +1,5 @@
 // ProfileList.api.ts
-import { User } from '../../../backend/src/modules/user/schemas/user.schema'
+import { User } from '../../../../backend/src/modules/user/schemas/user.schema'
 
 export const ProfileListApi = {
     fetchUserInfo: async (userId: string) => {

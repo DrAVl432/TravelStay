@@ -1,7 +1,7 @@
 //UserList.api.ts
-import { UserInfo } from '../../../backend/src/modules/user/interfaces/UserInfo';
-import { User } from '../../../backend/src/modules/user/schemas/user.schema'; // Проверьте правильность пути
-import { SearchUserParams } from '../../../backend/src/modules/user/dto/search-user-params.dto';
+import { UserInfo } from '../../../../backend/src/modules/user/interfaces/UserInfo';
+import { User } from '../../../../backend/src/modules/user/schemas/user.schema'; // Проверьте правильность пути
+import { SearchUserParams } from '../../../../backend/src/modules/user/dto/search-user-params.dto';
 
 export const UserListApi = {
     fetchUsersInfo: async (params?: SearchUserParams): Promise<User[]> => {

@@ -30,4 +30,5 @@
      @IsOptional()
      @IsEnum(UserRole)
      role?: UserRole;
+
    }

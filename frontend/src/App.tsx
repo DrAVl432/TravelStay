@@ -5,16 +5,17 @@ import Home from './pages/Home';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HotelsList from './components/HotelsList';
-import Search from './components/SearchHotelsUser';
+import Search from './components/SearchHotelsManager';
 import ProfileList from './components/ProfileList';
 import UserList from './components/UserList';
+import SearchHotelsManager from './components/SearchHotelsManager';
 
 
 const App = () => {
     return (
         <Router>
             <Navbar />
-            <Search />
+            {/* <Search /> */}
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/AllHotels" element={<HotelsList/>} />
@@ -22,6 +23,7 @@ const App = () => {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/Profile" element={<ProfileList />} />
               <Route path="/Users" element={<UserList />} />            
+              <Route path="/Bookings" element={<SearchHotelsManager />} />
               
             </Routes>
         </Router>

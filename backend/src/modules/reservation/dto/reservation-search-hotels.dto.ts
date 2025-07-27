@@ -12,6 +12,9 @@ export class ReservationSearchHotels {
 }
 export class ReservationSearchHotelsData {
 
+  //   @IsMongoId()
+  // hotelId!: string;
+
   @IsDateString()
   dateStart!: string;
 

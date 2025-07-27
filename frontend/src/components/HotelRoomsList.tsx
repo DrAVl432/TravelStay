@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { HotelRoomsApi } from '../API/HotelRooms.api';
+import { HotelRoomsApi } from '../API/Hotel/HotelRooms.api';
 import '../styles.css';
 
 interface HotelRoom {

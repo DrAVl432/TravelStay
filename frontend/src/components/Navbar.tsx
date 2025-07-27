@@ -24,6 +24,7 @@ const Navbar = () => {
                                 )}
                                 {userRole === 'manager' && (
                                     <>
+                                        <li><Link to="/Users">Список пользователей</Link></li>
                                         <li><Link to="/Bookings">Список броней</Link></li>
                                         <li><Link to="/Requests">Список обращений</Link></li>
                                         <li><Link to="/Profile">Профиль</Link></li>

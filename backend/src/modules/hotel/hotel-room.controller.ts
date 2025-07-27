@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Query, Param, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, UploadedFile, UseInterceptors, Put } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { HotelRoomService } from './hotel-room.service';
 import { CreateHotelRoomDto } from './dto/create-hotel-room.dto';
 import { SearchRoomsParams } from './dto/search-hotel-room-params.dto';
+import { UpdateHotelRoomDto } from './dto/update-hotel-room.dto';
 
 @Controller('hotel-rooms')
 export class HotelRoomController {
@@ -26,14 +27,16 @@ export class HotelRoomController {
   async findById(@Param('id') id: string) {
     return this.hotelRoomService.findById(id);
   }
-@Get('by-hotel/:hotelId')
-async findRoomsByHotel(
-    @Param('hotelId') hotelId: string,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
-    @Query('isEnabled') isEnabled?: boolean,
-) {
+
+  @Get('by-hotel/:hotelId')
+  async findRoomsByHotel(@Param('hotelId') hotelId: string, @Query('limit') limit?: number, @Query('offset') offset?: number, @Query('isEnabled') isEnabled?: boolean) {
     const params: SearchRoomsParams = { hotel: hotelId, limit, offset, isEnabled };
     return await this.hotelRoomService.search(params);
-}
+  }
+
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() updateHotelRoomDto: UpdateHotelRoomDto) {
+    const updatedRoom = await this.hotelRoomService.update(id, updateHotelRoomDto);
+    return updatedRoom;
+  }
 }

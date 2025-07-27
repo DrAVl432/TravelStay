@@ -92,4 +92,23 @@ async updateUser(id: string, updateData: UpdateUserDto): Promise<UserDocument | 
   Object.assign(user, updateData);
   return user.save();
 }
+
+// async updateUser(id: string, updateData: UpdateUserDto, currentUserRole: UserRole): Promise<User | null> {
+//      const user = await this.userModel.findById(id).exec();
+//      if (!user) return null;
+// добавим позже
+//      // Проверим, что пользователь с ролью CLIENT не может менять свою роль
+//      if (currentUserRole === UserRole.CLIENT) {
+//        delete updateData.role; // Удаляем изменение роли
+//      }
+
+//      // Проверяем, что администратор может изменять только роль
+//      if (currentUserRole === UserRole.ADMIN && updateData.role) {
+//        user.role = updateData.role;
+//      }
+
+//      Object.assign(user, updateData);
+//      return user.save();
+
+// }
 }
