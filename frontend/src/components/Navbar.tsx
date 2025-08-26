@@ -25,7 +25,7 @@ const Navbar = () => {
                                     <>
                                         <li><Link to="/chat">Чат техподдержки</Link></li>
                                         <li><Link to="/Profile">Профиль</Link></li>
-                                        <li><Link to="/Bookings">Список броней</Link></li>
+                                        <li><Link to="/MyReservations">Мои брони</Link></li>
                                     </>
                                 )}
                                 {userRole === 'manager' && (
