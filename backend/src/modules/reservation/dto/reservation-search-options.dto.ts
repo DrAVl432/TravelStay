@@ -1,12 +1,15 @@
-import { IsMongoId, IsDateString } from 'class-validator';
+import { IsMongoId, IsDateString, IsOptional } from 'class-validator';
 
 export class ReservationSearchOptions {
-  @IsMongoId()
-  userId!: string;
+@IsOptional()
+@IsMongoId()
+userId?: string;
 
-  @IsDateString()
-  dateStart!: string;
+@IsOptional()
+@IsDateString()
+dateStart?: string;
 
-  @IsDateString()
-  dateEnd!: string;
+@IsOptional()
+@IsDateString()
+dateEnd?: string;
 }

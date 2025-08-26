@@ -32,5 +32,9 @@ export class SearchUserParams {
     @IsOptional()
   @IsString()
   id?: string;
+  
+  @IsOptional()
+@IsString()
+q?: string;
 
 }

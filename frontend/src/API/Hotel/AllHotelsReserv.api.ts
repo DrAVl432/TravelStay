@@ -1,120 +1,144 @@
-export const HotelsDataApi = {
-    fetchAvailableHotels: async (dateStart: string, dateEnd: string) => {
-        // ... существующий код
-    },
-    fetchAvailableHotelsByName: async (hotelId: string) => {
-        // Поиск свободных гостиниц по имени
-        try {
-            const response = await fetch(`http://localhost:3000/api/hotels?hotelId=${hotelId}`);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('Ошибка при получении данных гостиниц:', error);
-            return [];
-        }
-    },
-    fetchFreeHotels: async (dateStart: string, dateEnd: string) => {
-        // Поиск свободных гостиниц по датам
-                try {
-            const response = await fetch(`http://localhost:3000/api/reservations/hotelsdata?dateStart=${dateStart}&dateEnd=${dateEnd}`);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('Ошибка при получении данных гостиниц:', error);
-            return [];
-        }
-    },
-    fetchFreeHotelsByNameAndDates: async (hotelId: string, dateStart: string, dateEnd: string) => {
-        // Поиск свободных гостиниц по имени и датам
-                    try {
-            const response = await fetch(`http://localhost:3000/api/reservations/hotels?hotelId=${hotelId}&dateStart=${dateStart}&dateEnd=${dateEnd}`);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('Ошибка при получении данных гостиниц:', error);
-            return [];
-        }
-    },
+export const HotelRezApi = {
+// Забронированные номера: по названию отеля
+fetchBookedByHotel: async (hotelId: string) => {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/reservations/hotel?hotelId=${encodeURIComponent(hotelId)}`,
+      { method: 'GET' }
+    );
+    if (!response.ok) throw new Error('Failed to fetch booked hotels');
+    return await response.json();
+  } catch (error) {
+    console.error('Ошибка при получении забронированных номеров по отелю:', error);
+    return [];
+  }
+},
+
+// Забронированные номера: по отелю и датам
+fetchBookedByHotelAndDates: async (hotelId: string, dateStart: string, dateEnd: string) => {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/reservations/hotels?hotelId=${encodeURIComponent(hotelId)}&dateStart=${encodeURIComponent(dateStart)}&dateEnd=${encodeURIComponent(dateEnd)}`,
+      { method: 'GET' }
+    );
+    if (!response.ok) throw new Error('Failed to fetch booked by hotel and dates');
+    return await response.json();
+  } catch (error) {
+    console.error('Ошибка при получении забронированных номеров по отелю и датам:', error);
+    return [];
+  }
+},
+
+// Забронированные: по датам
+fetchBookedByDates: async (dateStart: string, dateEnd: string) => {
+const response = await fetch(`http://localhost:3000/api/reservations/hotelsdata?dateStart=${encodeURIComponent(dateStart)}&dateEnd=${encodeURIComponent(dateEnd)}`, {
+method: 'GET',
+headers: { 'Content-Type': 'application/json' },
+});
+if (!response.ok) throw new Error('Failed to fetch booked by dates');
+return await response.json();
+},
+
+// // Забронированные: все с текущей даты
+// fetchBookedAllFromNow: async () => {
+// const today = new Date().toISOString();
+// const response = await fetch(`http://localhost:3000/api/reservations/hotelsdata?dateStart=${encodeURIComponent(today)}`, {
+// method: 'GET',
+// headers: { 'Content-Type': 'application/json' },
+// });
+// if (!response.ok) throw new Error('Failed to fetch booked from now');
+// return await response.json();
+// },
+
+// createReservation: async (reservationData: { roomId: string; userId: string; dateStart: string; dateEnd: string; }) => {
+// try {
+// const response = await fetch(`http://localhost:3000/api/reservations`, {
+// method: 'POST',
+// headers: { 'Content-Type': 'application/json' },
+// body: JSON.stringify(reservationData),
+// });
+// if (!response.ok) throw new Error('Ошибка при создании резервации');
+// return await response.json();
+// } catch (error) {
+// console.error('Ошибка при создании резервации:', error);
+// return null;
+// }
+// },
+// };
+
+  // Забронированные: все без учета дат
+  fetchBookedAll: async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/reservations`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error('Failed to fetch all reservations');
+      return await response.json();
+    } catch (error) {
+      console.error('Ошибка при получении всех бронирований:', error);
+      return [];
+    }
+  },
 };
 
-export const HotelRezApi = {
-    fetchAvailableHotel: async (hotelId: string) => {
-        // Поиск забронированных номеров по имени гостиницы
-        const response = await fetch(`http://localhost:3000/api/reservations/hotel?hotelId=${hotelId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        if (!response.ok) {
-            throw new Error('Failed to fetch hotels');
-        }
-        return await response.json();
-    },
-  
-    // Новый метод для создания резервации
-    createReservation: async (reservationData: { roomId: string; userId: string; dateStart: string; dateEnd: string; }) => {
-        try {
-            const response = await fetch(`http://localhost:3000/api/reservations`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(reservationData),
-            });
-
-            if (!response.ok) {
-                throw new Error('Ошибка при создании резервации');
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error('Ошибка при создании резервации:', error);
-            return null;
-        }
-    },
-
-    fetchAvailableHotelByNameAndDates: async (hotelId: string, dateStart: string, dateEnd: string) => {
-        // Поиск забронированных номеров по имени гостиницы и датам
-        // аналогично предыдущему методу
-    },
+// Поиск броней по пользователю (имя/email/телефон/userId)
+export const ReservationUserApi = {
+fetchByUser: async (params: { userId?: string; name?: string; email?: string; contactPhone?: string; q?: string; hotelId?: string; dateStart?: string; dateEnd?: string; }) => {
+const qs = new URLSearchParams();
+Object.entries(params).forEach(([k, v]) => {
+if (v) qs.append(k, String(v));
+});
+try {
+const response = await fetch(`http://localhost:3000/api/reservations/by-user?${qs.toString()}`, {
+method: 'GET',
+headers: { 'Content-Type': 'application/json' },
+});
+if (!response.ok) throw new Error('Failed to fetch reservations by user');
+return await response.json();
+} catch (error) {
+console.error('Ошибка при поиске брони по пользователю:', error);
+return [];
+}
+},
 };
 
 export const RoomDelApi = {
-    fetchHotelRoomDel: async (roomId: string) => { // Добавил roomId как параметр
-        const response = await fetch(`http://localhost:3000/api/reservations/${roomId}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+fetchHotelRoomDel: async (Id: string) => {
+const response = await fetch(`http://localhost:3000/api/reservations/${Id}`, {
+method: 'DELETE',
+headers: { 'Content-Type': 'application/json' },
+});
+if (!response.ok) {
+  throw new Error(`Failed to delete room reservation: ${response.status} ${response.statusText}`);
+}
 
-        if (!response.ok) {
-            throw new Error('Failed to delete room reservation');
-        }
+// Если 204 No Content — вернем null
+if (response.status === 204) {
+  return null;
+}
 
-        return await response.json();
-    },
+// Если есть тело и оно не пустое — распарсим
+const text = await response.text();
+if (!text) {
+  return null;
+}
+try {
+  return JSON.parse(text);
+} catch {
+  // Невалидный JSON — вернем как текст или null, чтобы не падать
+  return null;
+}
+},
 };
 
 export const RoomSearchApi = {
-    fetchHotelRoomSearch: async (roomId: string) => { // Добавил roomId как параметр
-        const response = await fetch(`http://localhost:3000/api/hotel-rooms/${roomId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        if (!response.ok) {
-            throw new Error('Failed to fetch room');
-        }
-        return await response.json();
-    },
-  
+fetchHotelRoomSearch: async (roomId: string) => {
+const response = await fetch(`http://localhost:3000/api/hotel-rooms/${encodeURIComponent(roomId)}`, {
+method: 'GET',
+headers: { 'Content-Type': 'application/json' },
+});
+if (!response.ok) throw new Error('Failed to fetch room');
+return await response.json();
+},
 };

@@ -1,4 +1,5 @@
 export interface ReservationWithDetails {
+    Id: string
    roomId: string;
 //   userId: User; // ID пользователя, на имя которого сделана бронь
   hotel: {

@@ -3,16 +3,16 @@ import { Document } from 'mongoose';
 
 export type ReservationDocument = Reservation & Document;
 
-@Schema({ timestamps: true }) // Включает поля createdAt и updatedAt
+@Schema({ timestamps: true })
 export class Reservation {
-  @Prop({ required: true })
-  userId!: string;  // Используем string, если не ставим reference
+  @Prop({ required: true, type: String, ref: 'User' }) 
+  userId!: string;
 
-  @Prop({ required: true })
-  hotelId!: string; // Используем string, если не ставим reference
+  @Prop({ required: true, type: String, ref: 'Hotel' }) 
+  hotelId!: string;
 
-  @Prop({ required: true })
-  roomId!: string; // Используем string, если не ставим reference
+  @Prop({ required: true, type: String, ref: 'HotelRoom' }) 
+  roomId!: string;
 
   @Prop({ required: true })
   dateStart!: Date;

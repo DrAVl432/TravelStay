@@ -1,9 +1,15 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
     const { isAuthenticated, userRole, logout } = useAuth();
+        const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate("/"); // Переход на главную страницу после выхода
+    };
 
     return (
         <header>
@@ -36,7 +42,7 @@ const Navbar = () => {
                                         <li><Link to="/Profile">Профиль</Link></li>
                                     </>
                                 )}
-                                <button onClick={logout}>Выйти</button>
+                                <button onClick={handleLogout}>Выйти</button>
                             </>
                         ) : (
                             <ul>

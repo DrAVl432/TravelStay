@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RegisterApi } from '../../API/AUT/Register.api';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom'; // Импортируем useNavigate
 
 const Register = () => {
     const [name, setName] = useState('');
@@ -11,6 +12,7 @@ const Register = () => {
     const [success, setSuccess] = useState('');
 
     const { login } = useAuth();
+    const navigate = useNavigate(); // Создаем navigate 
 
     const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setName(event.target.value);
@@ -33,8 +35,9 @@ const Register = () => {
         try {
             const response = await RegisterApi.register(email, password, name, contactPhone);
             setSuccess('Registration successful!');
-            login(response);
+            login(response); // Сохраняем пользователя в AuthContext
             console.log(response);
+            navigate("/"); // Переход на главную страницу после успешной регистрации
         } catch (error: any) {
             setError('Registration failed: ' + error.message);
             console.error(error);

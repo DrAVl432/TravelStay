@@ -19,7 +19,7 @@ export class UserService {
     // Проверка на уникальность email
     const exists = await this.userModel.findOne({ email: data.email });
     if (exists) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException('Email уже существует');
     }
 
     // Проверка на существование пароля
@@ -65,22 +65,40 @@ export class UserService {
   }
 
   async findAll(params: SearchUserParams): Promise<UserDocument[]> {
-    const filter = [];
-    if (params.email) filter.push({ email: { $regex: params.email, $options: 'i' } });
-    if (params.name) filter.push({ name: { $regex: params.name, $options: 'i' } });
-    if (params.contactPhone) filter.push({ contactPhone: { $regex: params.contactPhone, $options: 'i' } });
-    if (params.role) filter.push({ role: params.role });
-    const query = filter.length > 0 ? { $and: filter } : {};
-    
-    return this.userModel
-      .find(query)
-      .limit(params.limit ?? 0)
-      .skip(params.offset ?? 0)
-      .exec();
-  }
+const andFilters: any[] = []; // Фильтрация по роли и др. полям, если нужно
+if (params.role) andFilters.push({ role: params.role }); // Если приходит id — точное совпадение
+if (params.id) andFilters.push({ _id: params.id }); // Универсальный поиск q по ИЛИ
+if (params.q && params.q.trim()) {
+const q = params.q.trim();
+const orFilters = [
+{ name: { $regex: q, $options: 'i' } },
+{ email: { $regex: q, $options: 'i' } },
+{ contactPhone: { $regex: q, $options: 'i' } },
+];
+andFilters.push({ $or: orFilters });
+} else {
+// Поддержка старых отдельных фильтров при отсутствии q
+if (params.email) andFilters.push({ email: { $regex: params.email, $options: 'i' } });
+if (params.name) andFilters.push({ name: { $regex: params.name, $options: 'i' } });
+if (params.contactPhone) andFilters.push({ contactPhone: { $regex: params.contactPhone, $options: 'i' } });
+} const query = andFilters.length > 0 ? { $and: andFilters } : {}; return this.userModel
+.find(query)
+.limit(params.limit ?? 0)
+.skip(params.offset ?? 0)
+.exec();
+}
+
 async updateUser(id: string, updateData: UpdateUserDto): Promise<UserDocument | null> {
   const user = await this.userModel.findById(id).exec();
   if (!user) return null;
+
+    // Проверка на уникальность email
+  if (updateData.email) {
+    const existingUser = await this.userModel.findOne({ email: updateData.email, _id: { $ne: id } }).exec();
+    if (existingUser) {
+      throw new ConflictException('Email уже существует');
+    }
+  }
 
   // Проверка, изменился ли пароль
   if (updateData.password) {
