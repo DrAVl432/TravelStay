@@ -6,14 +6,15 @@ import { User } from '../../../backend/src/modules/user/schemas/user.schema';
 const ProfileList: React.FC = () => {
     const { user, isAuthenticated } = useAuth();
     const [userInfo, setUserInfo] = useState<User | null>(null);
-    const [formData, setFormData] = useState<Partial<User >>({});
+    const [formData, setFormData] = useState<Partial<User>>({});
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
-    const [editingField, setEditingField] = useState<keyof User  | 'password' | null>(null);
+    const [editingField, setEditingField] = useState<keyof User | 'password' | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchUserInfo = async () => {
+            // Проверим на наличие user и user.id
             if (isAuthenticated && user?.id) {
                 try {
                     const data = await ProfileListApi.fetchUserInfo(user.id);
@@ -33,7 +34,7 @@ const ProfileList: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name as keyof User ]: value }));
+        setFormData(prev => ({ ...prev, [name as keyof User]: value }));
     };
 
     const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,7 +46,7 @@ const ProfileList: React.FC = () => {
         }
     };
 
-    const handleEdit = (field: keyof User  | 'password') => {
+    const handleEdit = (field: keyof User | 'password') => {
         if (field !== 'password' && userInfo) {
             setFormData(prev => ({ ...prev, [field]: userInfo[field] }));
         }
@@ -54,7 +55,7 @@ const ProfileList: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const updateData: Partial<User > = {};
+        const updateData: Partial<User> = {};
 
         if (editingField === 'name' && formData.name) {
             updateData.name = formData.name;
@@ -69,24 +70,29 @@ const ProfileList: React.FC = () => {
         }
 
         if (editingField === 'password' && currentPassword && newPassword) {
-           // updateData.password = newPassword; 
+            // updateData.password = newPassword; 
         }
 
         const filteredData = Object.fromEntries(
             Object.entries(updateData).filter(([_, v]) => v !== undefined && v !== '')
         );
 
-        try {
-            const data = await ProfileListApi.updateUserInfo(user.id, filteredData);
-            setUserInfo(prevUserInfo => (prevUserInfo ? { ...prevUserInfo, ...data } : null));
-            setCurrentPassword('');
-            setNewPassword('');
-            setEditingField(null);
-            setError(null);
-            setFormData({}); // Сбрасываем formData
-        } catch (error) {
-            console.error(error);
-            setError('Не удалось сохранить изменения.');
+        // Проверка наличия user.id перед API-запросом
+        if (user?.id) {
+            try {
+                const data = await ProfileListApi.updateUserInfo(user.id, filteredData);
+                setUserInfo(prevUserInfo => (prevUserInfo ? { ...prevUserInfo, ...data } : null));
+                setCurrentPassword('');
+                setNewPassword('');
+                setEditingField(null);
+                setError(null);
+                setFormData({}); // Сбрасываем formData
+            } catch (error) {
+                console.error(error);
+                setError('Не удалось сохранить изменения.');
+            }
+        } else {
+            setError('Идентификатор пользователя отсутствует.');
         }
     };
 

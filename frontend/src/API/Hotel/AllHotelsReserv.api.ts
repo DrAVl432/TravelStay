@@ -50,21 +50,26 @@ return await response.json();
 // return await response.json();
 // },
 
-// createReservation: async (reservationData: { roomId: string; userId: string; dateStart: string; dateEnd: string; }) => {
-// try {
-// const response = await fetch(`http://localhost:3000/api/reservations`, {
-// method: 'POST',
-// headers: { 'Content-Type': 'application/json' },
-// body: JSON.stringify(reservationData),
-// });
-// if (!response.ok) throw new Error('Ошибка при создании резервации');
-// return await response.json();
-// } catch (error) {
-// console.error('Ошибка при создании резервации:', error);
-// return null;
-// }
-// },
-// };
+
+createReservation: async (reservationData: { roomId: string; userId: string; hotelId: string; dateStart: string; dateEnd: string; }) => {
+  try {
+    const response = await fetch(`http://localhost:3000/api/reservations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reservationData),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Ошибка при создании резервации:', errorText);
+      throw new Error('Ошибка при создании резервации');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Ошибка при создании резервации:', error);
+    return null;
+  }
+},
+
 
   // Забронированные: все без учета дат
   fetchBookedAll: async () => {

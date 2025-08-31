@@ -5,7 +5,6 @@ import Home from './pages/Home';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HotelsList from './components/HotelsList';
-import Search from './components/SearchHotelsManager';
 import ProfileList from './components/ProfileList';
 import UserList from './components/UserList';
 import SearchHotelsManager from './components/SearchHotelsManager';
