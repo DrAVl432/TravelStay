@@ -4,16 +4,36 @@ import { AllHotelsApi } from '../API/Hotel/AllHotels.api';
 import HotelRoomsList from './HotelRoomsList';
 import HotelRoomsListClient from './HotelRoomsListClient';
 import HotelRoomsListAdmin from './HotelRoomsListAdmin';
+import HotelForm from './HotelForm'; // Импортируем форму
 import '../styles.css';
 import useAuth from '../hooks/useAuth';
+// import { useNavigate } from 'react-router-dom';
 
 const HotelsList: React.FC = () => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [componentToRender, setComponentToRender] = useState<React.ReactElement | null>(null); // Новый стейт для компонента
-  const { userRole } = useAuth(); // Получение роли пользователя из кастомного хука
+  const [isHotelFormOpen, setIsHotelFormOpen] = useState<boolean>(false); // Состояние для формы
+  const { userRole } = useAuth();
+  // const navigate = useNavigate();
   const hotelsPerPage = 10;
+
+  // const handleNavigation = (hotelId: string) => {
+  //   switch (userRole) {
+  //     case 'admin':
+  //       navigate(`/hotelRoomsListAdmin/${hotelId}`);
+  //       break;
+  //     case 'client':
+  //       navigate(`/hotelRoomsListClient/${hotelId}`);
+  //       break;
+  //     default:
+  //       navigate(`/hotelRoomsList/${hotelId}`);
+  //       break;
+  //   }
+  // };
+
 
   useEffect(() => {
     const fetchHotels = async () => {
@@ -28,12 +48,19 @@ const HotelsList: React.FC = () => {
     fetchHotels();
   }, []);
 
-  const currentHotels = hotels.slice(
-    (currentPage - 1) * hotelsPerPage,
-    currentPage * hotelsPerPage
-  );
+  const currentHotels = hotels
+    .filter((hotel) => hotel.title.toLowerCase().includes(searchQuery.toLowerCase())) // Фильтрация по названию
+    .slice((currentPage - 1) * hotelsPerPage, currentPage * hotelsPerPage);
 
   const handlePageChange = (page: number) => setCurrentPage(page);
+
+  const handleAddHotel = () => {
+    setIsHotelFormOpen(true); // Открыть форму
+  };
+
+  const closeHotelForm = () => {
+    setIsHotelFormOpen(false); // Закрыть форму
+  };
 
   const openHotelRooms = (hotel: Hotel) => {
     setSelectedHotel(hotel);
@@ -45,9 +72,8 @@ const HotelsList: React.FC = () => {
       setComponentToRender(<HotelRoomsListClient hotel={hotel} onClose={closeHotelRooms} />);
     } else {
       setComponentToRender(<HotelRoomsList hotel={hotel} onClose={closeHotelRooms} />);
-    }
-  };
-
+}
+ };
   const closeHotelRooms = () => {
     setSelectedHotel(null);
     setComponentToRender(null); // Сбрасываем компонент
@@ -59,13 +85,26 @@ const HotelsList: React.FC = () => {
 
   return (
     <div id="container">
+      <div id="header">
+        <input
+          type="text"
+          placeholder="Введите название гостиницы..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        {userRole === 'admin' && (
+          <button onClick={handleAddHotel} style={{ marginLeft: '10px' }}>
+            Добавить гостиницу
+          </button>
+        )}
+      </div>
       <div id="main">
         {currentHotels.map((hotel) => (
           <div key={hotel._id} className="hotel-card">
             <img src={hotel.images[0]} alt={hotel.title} />
             <h3>{hotel.title}</h3>
             <p>{hotel.description}</p>
-            {userRole === 'admin' ? (
+ {userRole === 'admin' ? (
               <button onClick={() => openHotelRooms(hotel)}>Редактировать</button>
             ) : (
               <button onClick={() => openHotelRooms(hotel)}>Подробнее</button>
@@ -80,6 +119,13 @@ const HotelsList: React.FC = () => {
           </button>
         ))}
       </div>
+
+      {/* Форма для добавления гостиницы */}
+      {isHotelFormOpen && (
+        <div className="modal">
+          <HotelForm onClose={closeHotelForm} />
+        </div>
+      )}
     </div>
   );
 };

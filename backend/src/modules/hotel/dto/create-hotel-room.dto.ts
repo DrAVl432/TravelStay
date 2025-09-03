@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
+import { IsArray, IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
 import { IsMongoId } from 'class-validator'; // добавлено
 
 export class CreateHotelRoomDto {
@@ -10,8 +10,10 @@ export class CreateHotelRoomDto {
   @IsString()
   description?: string;
 
-  @IsOptional()
-  images?: string;
+ @IsOptional()
+  @IsArray()
+  @IsString({ each: true }) // Проверка элемента массива
+  images?: string[];
 
   @IsOptional()
   @IsBoolean()

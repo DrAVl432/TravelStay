@@ -17,7 +17,7 @@ type Reservation = {
 
 const MyReservations: React.FC = () => {
   const { user } = useAuth();
-  const currentUserId = user?._id || user?.id;
+  const currentUserId = user?.id; //user?._id || 
 
   const [useDateFilter, setUseDateFilter] = useState(false);
   const [dateStart, setDateStart] = useState('');

@@ -5,6 +5,7 @@ import { UserModule } from './modules/user/user.module';
 import { HotelModule } from './modules/hotel/hotel.module';
 import { ReservationModule } from './modules/reservation/reservation.module';
 //import { SupportRequestModule } from './modules/support/support-request.module';
+import { ImageModule } from './modules/image/image.module';
 import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
@@ -26,6 +27,7 @@ import { AuthModule } from './modules/auth/auth.module';
     ReservationModule,
     //SupportRequestModule,
     AuthModule,
+    ImageModule,
     
     // остальные модули
   ],

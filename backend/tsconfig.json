@@ -1,21 +1,21 @@
 {
-"compilerOptions": {
-"outDir": "./dist",
-"rootDir": "./src",
-"target": "es2019",
-"module": "commonjs",
-"moduleResolution": "node",
-"lib": ["es2020", "dom"],
-"strict": true,
-"esModuleInterop": true,
-"skipLibCheck": true,
-"resolveJsonModule": true,
-"experimentalDecorators": true,
-"emitDecoratorMetadata": true,
-"useDefineForClassFields": false,
-"sourceMap": true
-},
-"include": ["src//*.ts"],
-"exclude": ["node_modules", "dist", "test", "/*.spec.ts"],
-"typeRoots": ["./node_modules/@types", "./types"]
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "target": "es6", // Обновлено для поддержки верхнеуровневого await
+    "module": "commonjs", // Обновлено для соответствия target
+    "moduleResolution": "node",
+    "lib": ["es2022", "dom"], // Обновлено для соответствия target
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
+    "sourceMap": true,
+  },
+  "include": ["src", "types"],
+  "exclude": ["node_modules", "dist", "test", "*.spec.ts"],
+  "typeRoots": ["./node_modules/@types", "./types"]
 }

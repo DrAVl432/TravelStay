@@ -1,4 +1,4 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsArray } from 'class-validator';
 
 export class UpdateHotelDto {
   @IsOptional()
@@ -9,7 +9,8 @@ export class UpdateHotelDto {
   @IsString()
   description?: string;
 
-    @IsOptional()
-  @IsString()
-  images?: string;
+@IsOptional()
+  @IsArray()
+  @IsString({ each: true }) // Проверка, что каждый элемент массива — строка
+  images?: string[];
 }

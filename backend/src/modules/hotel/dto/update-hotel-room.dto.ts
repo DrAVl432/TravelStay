@@ -1,12 +1,14 @@
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsArray  } from 'class-validator';
 
 export class UpdateHotelRoomDto {
   @IsOptional()
   @IsString()
   description?: string;
 
-  @IsOptional()
-  images?: string;
+   @IsOptional()
+  @IsArray()
+  @IsString({ each: true }) // Проверка элемента массива
+  images?: string[];
 
   @IsOptional()
   @IsBoolean()

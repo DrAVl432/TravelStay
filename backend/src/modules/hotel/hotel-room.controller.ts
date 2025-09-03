@@ -13,7 +13,7 @@ export class HotelRoomController {
   @UseInterceptors(FileInterceptor('images')) // Добавлено для загрузки изображения
   async create(@Body() createHotelRoomDto: CreateHotelRoomDto, @UploadedFile() file: Express.Multer.File) {
     if (file) {
-      createHotelRoomDto.images = file.path; // Сохранение пути к загруженному файлу
+    createHotelRoomDto.images = [file.path] // Сохранение пути к загруженному файлу
     }
     return this.hotelRoomService.create(createHotelRoomDto);
   }
