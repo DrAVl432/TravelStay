@@ -8,6 +8,9 @@ export class HotelRoom {
   @Prop({ required: true, type: Types.ObjectId, ref: 'Hotel' })
   hotel!: Types.ObjectId;
 
+  @Prop({ required: true, unique: true })
+  title!: string;
+
   @Prop()
   description?: string;
 

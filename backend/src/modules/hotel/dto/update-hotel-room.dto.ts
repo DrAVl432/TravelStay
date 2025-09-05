@@ -3,6 +3,10 @@ import { IsString, IsOptional, IsBoolean, IsArray  } from 'class-validator';
 export class UpdateHotelRoomDto {
   @IsOptional()
   @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
   description?: string;
 
    @IsOptional()

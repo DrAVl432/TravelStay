@@ -7,7 +7,6 @@ import HotelRoomsListAdmin from './HotelRoomsListAdmin';
 import HotelForm from './HotelForm'; // Импортируем форму
 import '../styles.css';
 import useAuth from '../hooks/useAuth';
-// import { useNavigate } from 'react-router-dom';
 
 const HotelsList: React.FC = () => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -17,25 +16,8 @@ const HotelsList: React.FC = () => {
   const [componentToRender, setComponentToRender] = useState<React.ReactElement | null>(null); // Новый стейт для компонента
   const [isHotelFormOpen, setIsHotelFormOpen] = useState<boolean>(false); // Состояние для формы
   const { userRole } = useAuth();
-  // const navigate = useNavigate();
   const hotelsPerPage = 10;
 
-  // const handleNavigation = (hotelId: string) => {
-  //   switch (userRole) {
-  //     case 'admin':
-  //       navigate(`/hotelRoomsListAdmin/${hotelId}`);
-  //       break;
-  //     case 'client':
-  //       navigate(`/hotelRoomsListClient/${hotelId}`);
-  //       break;
-  //     default:
-  //       navigate(`/hotelRoomsList/${hotelId}`);
-  //       break;
-  //   }
-  // };
-
-
-  useEffect(() => {
     const fetchHotels = async () => {
       try {
         const fetchedHotels = await AllHotelsApi.getAllHotels();
@@ -44,9 +26,19 @@ const HotelsList: React.FC = () => {
         console.error('Ошибка при получении отелей:', error);
       }
     };
-
+ useEffect(() => {
     fetchHotels();
   }, []);
+
+    const handleHotelFormClose = async () => {
+    await fetchHotels(); // Обновление списка при закрытии формы
+    setIsHotelFormOpen(false);
+  };
+
+  const handleHotelRoomsClose = async () => {
+    await fetchHotels(); // Обновление списка при закрытии админ-компонента
+    setComponentToRender(null); // Закрываем компонент
+  };
 
   const currentHotels = hotels
     .filter((hotel) => hotel.title.toLowerCase().includes(searchQuery.toLowerCase())) // Фильтрация по названию
@@ -82,6 +74,9 @@ const HotelsList: React.FC = () => {
   if (componentToRender) {
     return componentToRender; // Рендерим выбранный компонент
   }
+
+
+
 
   return (
     <div id="container">
@@ -121,10 +116,17 @@ const HotelsList: React.FC = () => {
       </div>
 
       {/* Форма для добавления гостиницы */}
-      {isHotelFormOpen && (
-        <div className="modal">
-          <HotelForm onClose={closeHotelForm} />
-        </div>
+       {isHotelFormOpen && (
+        <HotelForm
+          onClose={handleHotelFormClose} // Передаем обновление вместе с закрытием
+          onUpdate={fetchHotels} // Обновление списка после сохранения
+        />
+      )}
+      {selectedHotel && (
+        <HotelRoomsListAdmin
+          hotel={selectedHotel}
+          onClose={handleHotelRoomsClose} // Передаем обновление вместе с закрытием
+        />
       )}
     </div>
   );

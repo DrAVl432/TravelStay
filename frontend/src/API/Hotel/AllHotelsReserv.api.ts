@@ -137,13 +137,3 @@ try {
 },
 };
 
-export const RoomSearchApi = {
-fetchHotelRoomSearch: async (roomId: string) => {
-const response = await fetch(`http://localhost:3000/api/hotel-rooms/${encodeURIComponent(roomId)}`, {
-method: 'GET',
-headers: { 'Content-Type': 'application/json' },
-});
-if (!response.ok) throw new Error('Failed to fetch room');
-return await response.json();
-},
-};

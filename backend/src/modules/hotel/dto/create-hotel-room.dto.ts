@@ -6,6 +6,10 @@ export class CreateHotelRoomDto {
   @IsMongoId() // добавлено для проверки, что это валидный ObjectId
   hotel!: string;
 
+  @IsString()
+  @IsNotEmpty()
+  title!: string;
+
   @IsOptional()
   @IsString()
   description?: string;

@@ -18,5 +18,9 @@ export class SearchRoomsParams {
   hotel!: string;
 
   @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
   isEnabled?: boolean;
 }
