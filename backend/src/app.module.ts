@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from './modules/user/user.module';
 import { HotelModule } from './modules/hotel/hotel.module';
 import { ReservationModule } from './modules/reservation/reservation.module';
-//import { SupportRequestModule } from './modules/support/support-request.module';
+import { SupportModule } from './modules/support/support.module';
 import { ImageModule } from './modules/image/image.module';
 import { AuthModule } from './modules/auth/auth.module';
 
@@ -25,7 +25,7 @@ import { AuthModule } from './modules/auth/auth.module';
     UserModule,
     HotelModule,
     ReservationModule,
-    //SupportRequestModule,
+    SupportModule,
     AuthModule,
     ImageModule,
     
