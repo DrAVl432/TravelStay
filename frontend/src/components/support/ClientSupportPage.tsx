@@ -1,22 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import SupportChatService from '../../services/SupportChatService';
+import SupportChatService from '../../API/support/SupportChatService';
 import { useAuth } from '../../context/AuthContext';
 
-const ClientSupportPage = () => {
+interface SupportRequest {
+  id: string;
+  createdAt: string;
+  isActive: boolean;
+}
+
+const ClientSupportPage: React.FC = () => {
   const { user } = useAuth();
-  const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState<SupportRequest[]>([]);
 
   useEffect(() => {
-    SupportChatService.getClientSupportRequests().then(setRequests);
-  }, []);
+    if (user?.id) {
+      SupportChatService.getClientSupportRequests().then(setRequests).catch(console.error);
+    }
+  }, [user]);
 
-  const createSupportRequest = async () => {
-    const newRequest = prompt('Введите текст обращения:');
-    if (newRequest) {
-      await SupportChatService.createSupportRequest(newRequest);
-      const updatedRequests = await SupportChatService.getClientSupportRequests();
-      setRequests(updatedRequests);
+const createSupportRequest = async () => {
+  const newRequest = prompt('Введите текст обращения:');
+  if (newRequest && user?.id) {
+    await SupportChatService.createSupportRequest(user.id, newRequest); // Передаём user.id
+    const updatedRequests = await SupportChatService.getClientSupportRequests();
+    setRequests(updatedRequests);
     }
   };
 

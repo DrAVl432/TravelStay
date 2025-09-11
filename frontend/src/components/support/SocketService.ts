@@ -9,14 +9,7 @@ class SocketService {
     this.socket = io(process.env.REACT_APP_API_URL || '', {
       query: { userId },
     });
-
-    this.socket.on('connect', () => {
-      console.log('WebSocket connected');
-    });
-
-    this.socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-    });
+    console.log('WebSocket подключен');
   }
 
   subscribeToChat(chatId: string, callback: (message: any) => void) {
@@ -30,6 +23,7 @@ class SocketService {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
+      console.log('WebSocket отключен');
     }
   }
 }

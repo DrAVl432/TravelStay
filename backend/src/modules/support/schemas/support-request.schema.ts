@@ -1,8 +1,8 @@
-import { Schema } from 'mongoose';
+import { Schema, Types } from 'mongoose';
 
 export const SupportRequestSchema = new Schema({
-  user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+  user: { type: Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, required: true },
+  messages: [{ type: Types.ObjectId, ref: 'Message' }],
   isActive: { type: Boolean, default: true },
-  messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }],
 });

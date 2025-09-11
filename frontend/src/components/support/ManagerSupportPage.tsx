@@ -1,12 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import SupportChatService from '../../services/SupportChatService';
+import SupportChatService from '../../API/support/SupportChatService';
 
-const ManagerSupportPage = () => {
-  const [requests, setRequests] = useState([]);
+interface ManagerSupportRequest {
+  id: string;
+  createdAt: string;
+  isActive: boolean;
+  client: {
+    id: string;
+    name: string;
+  };
+}
+
+const ManagerSupportPage: React.FC = () => {
+  const [requests, setRequests] = useState<ManagerSupportRequest[]>([]);
 
   useEffect(() => {
-    SupportChatService.getManagerSupportRequests().then(setRequests);
+    SupportChatService.getManagerSupportRequests().then(setRequests).catch(console.error);
   }, []);
 
   return (

@@ -1,5 +1,6 @@
-import { Controller, Post, Patch, Body, Param, Get, Delete} from '@nestjs/common';
+import { Controller, Post, Patch, Body, Param, Get, Delete, Query} from '@nestjs/common';
 import { SupportService } from './support.service';
+import { GetChatListParams } from './dto/get-chat-list.dto';
 
 @Controller('support-requests')
 export class SupportController {
@@ -43,6 +44,16 @@ async closeRequest(@Param('id') supportRequestId: string) {
   return await this.supportService.closeRequest(supportRequestId);
 }
 
+@Get('/client-requests')
+async getClientSupportRequests(@Query('userId') userId: string) {
+  return await this.supportService.getClientSupportRequests(userId);
 }
 
+@Get('/manager-requests')
+async getManagerSupportRequests(@Query() query: GetChatListParams) {
+  return await this.supportService.getManagerSupportRequests(query);
+}
+
+
+}
 
