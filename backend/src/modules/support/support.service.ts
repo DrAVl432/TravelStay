@@ -170,4 +170,19 @@ export class SupportService {
       firstMessage: (request.messages[0] as Message)?.text || '',
     }));
   }
+  
+  async getSupportRequestDetails(supportRequestId: string) {
+  const supportRequest = await this.supportRequestModel
+    .findById(supportRequestId)
+    .populate('messages')
+    .exec();
+
+  if (!supportRequest) {
+    throw new Error(`Обращение с ID "${supportRequestId}" не найдено.`);
+  }
+
+  return {
+    firstMessage: (supportRequest.messages[0] as Message)?.text || 'Нет сообщений',
+  };
+}
 }

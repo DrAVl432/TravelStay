@@ -1,98 +1,103 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import SupportChatService from '../../API/support/SupportChatService';
-import SocketService from '../../components/support/SocketService'; 
-import { useAuth } from '../../context/AuthContext';
-
-// Интерфейсы для структуры сообщения и параметров
-interface APIMessage {
-  id: string;
-  author: {
-    id: string;
-    name: string;
-  };
-  text: string;
-  sentAt: string; // ISO string от API
-  readAt?: string; // ISO string от API
-}
+import { UserListApi } from '../../API/User/UserList.api'; // Импорт API пользователей
+import { User } from '../../../../backend/src/modules/user/schemas/user.schema'; // Импорт из backend-схемы
 
 interface Message {
-  id: string;
-  author: {
-    id: string;
-    name: string;
-  };
+  _id: string;
   text: string;
-  sentAt: Date; // Локальная обработка как Date
-  readAt?: Date; // Локальная обработка как Date | undefined
+  sentAt: string;
+  readAt?: string;
+  author: string;
 }
 
-const ChatWindow: React.FC = () => {
-  const { id } = useParams<{ id: string }>(); // Типизация для параметра, ожидающего chatId
-  const { user } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]); // Список сообщений
-  const [text, setText] = useState<string>(''); // Поле ввода текста
+interface ChatWindowProps {
+  id: string;
+  currentUserId: string;
+}
 
-  // Метод для преобразования сообщения из API в локальный формат
-  const parseMessage = (apiMessage: APIMessage): Message => ({
-    ...apiMessage,
-    sentAt: new Date(apiMessage.sentAt),
-    readAt: apiMessage.readAt ? new Date(apiMessage.readAt) : undefined,
-  });
+const ChatWindow: React.FC<ChatWindowProps> = ({ id, currentUserId }) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [requestText, setRequestText] = useState<string>('');
 
   useEffect(() => {
-    if (user?.id) {
-      SocketService.connect(user.id); // Устанавливаем соединение с WebSocket-сервером
+    console.log("Current User ID:", currentUserId);
 
-      // Подписка на получение новых сообщений через WebSocket
-      SocketService.subscribeToChat(id!, (newMessage: APIMessage) => {
-        setMessages((prev) => [...prev, parseMessage(newMessage)]);
-      });
+    // Загрузка сообщений
+    SupportChatService.getMessages(id)
+      .then((msgs) => {
+        setMessages(msgs);
+      })
+      .catch(console.error);
 
-      // Загружаем историю чата
-      SupportChatService.getMessages(id!)
-        .then((apiMessages) => apiMessages.map(parseMessage)) // Преобразуем серверные данные
-        .then(setMessages) // Устанавливаем локальное состояние
-        .catch(console.error);
+    // Загрузка текста обращения
+    SupportChatService.getSupportRequestDetails(id)
+      .then((data) => {
+        setRequestText(data.text);
+      })
+      .catch(console.error);
 
-      // Отключить WebSocket при выходе из компонента
-      return () => {
-        SocketService.disconnect();
-      };
-    }
-  }, [id, user]);
+    // Загрузка списка пользователей
+    UserListApi.fetchUsersInfo()
+      .then((userList) => {
+        setUsers(userList);
+        console.log("Loaded Users:", userList);
+      })
+      .catch(console.error);
+  }, [id, currentUserId]);
 
-const sendMessage = async () => {
-  if (text.trim() && user?.id) {
-    try {
-      await SupportChatService.sendMessage(id!, user.id, text); // Передаём user.id как автора
-      setText(''); // Очищаем поле ввода
-    } catch (error) {
-      console.error('Ошибка при отправке сообщения:', error);
-    }
-  }
-};
+  // Функция поиска имени автора по _id
+  const getAuthorName = (author: string) => {
+    const user = users.find((u) => String(u._id) === author);
+    return user ? user.name : 'Неизвестный автор';
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const shouldShowDate = (currentMessageDate: string, previousMessageDate?: string) => {
+    if (!previousMessageDate) return true;
+    return new Date(currentMessageDate).toDateString() !== new Date(previousMessageDate).toDateString();
+  };
 
   return (
-    <div>
-      <h2>Общение в чате</h2>
-      <div>
-        {messages.map((msg) => (
-          <div key={msg.id}>
-            <p>
-              <b>{msg.author.name}:</b> {msg.text}
-            </p>
-            <p>{msg.sentAt.toLocaleString()}</p>
-          </div>
-        ))}
+    <div className="chat-window">
+      <div className="chat-header">
+        <h3>Обращение: {requestText}</h3>
       </div>
-      <input
-        type="text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Введите текст..."
-      />
-      <button onClick={sendMessage}>Отправить</button>
+      <div className="chat-messages">
+        {messages.map((msg, index) => {
+          const prevMsg = messages[index - 1];
+          const showDate = shouldShowDate(msg.sentAt, prevMsg?.sentAt);
+
+          return (
+            <div key={msg._id}>
+              {showDate && <div className="date-header">{formatDate(msg.sentAt)}</div>}
+              <div
+                className={`message-container ${
+                  String(msg.author) === String(currentUserId) ? 'current-user' : 'other-user'
+                }`}
+              >
+                {String(msg.author) !== String(currentUserId) && (
+                  <div className="message-author">{getAuthorName(msg.author)}</div> // Отображение имени вместо ID
+                )}
+                <div className="message">
+                  <div className="message-text">{msg.text}</div>
+                  <div className="message-time">{formatTime(msg.sentAt)}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

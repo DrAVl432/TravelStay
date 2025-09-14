@@ -301,3 +301,84 @@ nav a {
   width: 500px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
   }
+
+ /* Chat */
+.chat-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+}
+
+.chat-header {
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 10px 0 10px;
+}
+
+.date-header {
+  text-align: center;
+  margin: 10px 0;
+  font-weight: bold;
+  font-size: 14px;
+  color: #888;
+}
+
+.message-container {
+  display: flex;
+  flex-direction: column;
+  margin: 10px 0;
+}
+
+.message-container.current-user {
+  align-items: flex-end; /* Выравнивание сообщений пользователя справа */
+}
+
+.message-container.other-user {
+  align-items: flex-start; /* Выравнивание сообщений собеседника слева */
+}
+
+.message-author {
+  font-weight: bold;
+  margin-bottom: 3px;
+  font-size: 14px;
+  color: #666;
+}
+
+.message {
+  display: inline-block;
+  max-width: 70%;
+  border-radius: 10px;
+  padding: 10px 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.message-text {
+  font-size: 14px;
+  color: #333;
+}
+
+.current-user .message {
+  background: #007bff; /* Цвет фона для сообщения пользователя */
+  color: white;
+}
+
+.other-user .message {
+  background: #f1f1f1; /* Цвет фона для сообщения собеседника */
+}
+
+.message-time {
+  font-size: 12px;
+  color: #999;
+  margin-top: 5px;
+  text-align: right; /* Время сообщения всегда справа */
+}

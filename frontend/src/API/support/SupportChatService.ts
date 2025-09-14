@@ -1,14 +1,13 @@
-import axios from 'axios';
-
 const API_URL = process.env.REACT_APP_API_URL;
 
 // Интерфейс для сообщений
 interface Message {
-  id: string;
-  author: {
-    id: string;
-    name: string;
-  };
+  _id: string;
+  author: string;
+  // {
+  //   id: string;
+  //   name: string;
+  // };
   text: string;
   sentAt: string; // ISO формат
   readAt?: string; // ISO формат, необязателен
@@ -16,51 +15,103 @@ interface Message {
 
 const SupportChatService = {
   async getMessages(chatId: string): Promise<Message[]> {
-    // Исправил путь для получения сообщений
-    const response = await axios.get(`${API_URL}/api/support-requests/${chatId}/messages`);
-    return response.data;
+    const response = await fetch(`${API_URL}/api/support-requests/${chatId}/messages`);
+    if (!response.ok) {
+      throw new Error(`Ошибка при получении сообщений: ${response.statusText}`);
+    }
+    return await response.json();
   },
 
   async sendMessage(chatId: string, author: string, text: string): Promise<void> {
-    // Исправил путь и параметры для отправки сообщений
-    await axios.post(`${API_URL}/api/support-requests/${chatId}/send`, { author, text });
+    const response = await fetch(`${API_URL}/api/support-requests/${chatId}/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ author, text }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ошибка при отправке сообщения: ${response.statusText}`);
+    }
   },
 
-  async getClientSupportRequests(): Promise<any[]> {
-    // Исправил путь для получения запросов клиента
-    const response = await axios.get(`${API_URL}/api/support-requests/`);
-    return response.data;
+  async getClientSupportRequests(userId: string): Promise<any[]> {
+    const response = await fetch(`${API_URL}/api/support-requests/client-requests?userId=${userId}`);
+
+    if (!response.ok) {
+      throw new Error(`Ошибка при получении запросов клиента: ${response.statusText}`);
+    }
+
+    return await response.json();
   },
 
-    async getManagerSupportRequests(): Promise<any[]> {
-    const response = await axios.get(`${API_URL}/api/support-requests/manager`);
-    return response.data;
+  async getManagerSupportRequests(): Promise<any[]> {
+    const response = await fetch(`${API_URL}/api/support-requests/manager-requests`);
+
+    if (!response.ok) {
+      throw new Error(`Ошибка при получении запросов менеджера: ${response.statusText}`);
+    }
+
+    return await response.json();
   },
 
   async createSupportRequest(userId: string, text: string): Promise<void> {
-    // Скорректировал параметры для создания обращения
-    await axios.post(`${API_URL}/api/support-requests/`, { userId, text });
+    const response = await fetch(`${API_URL}/api/support-requests/`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({ userId, text }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ошибка при создании обращения: ${response.statusText}`);
+    }
   },
 
   async markMessagesAsRead(userId: string, supportRequestId: string, createdBefore: Date): Promise<void> {
-    // Добавил метод для пометки прочитанных сообщений
-    await axios.patch(`${API_URL}/api/support-requests/mark-read`, {
-      user: userId,
-      supportRequest: supportRequestId,
-      createdBefore,
+    const response = await fetch(`${API_URL}/api/support-requests/mark-read`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user: userId, supportRequest: supportRequestId, createdBefore }),
     });
+
+    if (!response.ok) {
+      throw new Error(`Ошибка при пометке сообщений как прочитанных: ${response.statusText}`);
+    }
   },
 
   async getUnreadCount(chatId: string): Promise<number> {
-    // Исправил путь для получения количества непрочитанных сообщений
-    const response = await axios.get(`${API_URL}/api/support-requests/${chatId}/unread-count`);
-    return response.data.unreadCount;
+    const response = await fetch(`${API_URL}/api/support-requests/${chatId}/unread-count`);
+
+    if (!response.ok) {
+      throw new Error(`Ошибка при получении количества непрочитанных сообщений: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.unreadCount;
   },
 
   async closeRequest(chatId: string): Promise<void> {
-    // Исправил путь для закрытия обращения
-    await axios.delete(`${API_URL}/api/support-requests/${chatId}/close`);
+    const response = await fetch(`${API_URL}/api/support-requests/${chatId}/close`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ошибка при закрытии обращения: ${response.statusText}`);
+    }
   },
+
+  async getSupportRequestDetails(chatId: string): Promise<{ text: string }> {
+  const response = await fetch(`${API_URL}/api/support-requests/${chatId}`);
+  if (!response.ok) {
+    throw new Error(`Ошибка при получении деталей обращения: ${response.statusText}`);
+  }
+  return await response.json();
+},
 };
 
 export default SupportChatService;

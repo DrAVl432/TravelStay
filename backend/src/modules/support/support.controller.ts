@@ -54,6 +54,13 @@ async getManagerSupportRequests(@Query() query: GetChatListParams) {
   return await this.supportService.getManagerSupportRequests(query);
 }
 
-
+@Get('/:id')
+async getSupportRequestDetails(@Param('id') id: string) {
+  const supportRequest = await this.supportService.getSupportRequestDetails(id);
+  if (!supportRequest) {
+    throw new Error(`Обращение с ID "${id}" не найдено.`);
+  }
+  return { text: supportRequest.firstMessage }; // Вернуть текст первого сообщения обращения
+}
 }
 

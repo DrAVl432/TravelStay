@@ -3,5 +3,9 @@ export interface Message {
   text: string;
   sentAt: Date;
   readAt?: Date;
-  author: string; // Связь с пользователем
+  author: string; 
+  // {
+  //   id: string;
+  //   name: string;
+  // };// Связь с пользователем
    }
