@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { User } from '../../../backend/src/modules/user/schemas/user.schema';
-import { UserListApi } from '../API/User/UserList.api';
+import { User, UserListApi } from '../API/User/UserList.api';
 import useAuth from '../hooks/useAuth'; 
 import { ProfileListApi } from '../API/User/ProfileList.api'; 
+import { UserRole } from '../../../backend/src/modules/user/enums/user-role.enum';
+import mongoose from 'mongoose';
+
 
 const UserList: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -16,7 +18,7 @@ const UserList: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const userData = await UserListApi.fetchUsersInfo(q ? ({ q } as any) : {});
+      const userData = await UserListApi.fetchUsersInfo(q ? { q } : {});
       setUsers(userData);
     } catch (err) {
       setError('Ошибка загрузки пользователей');
@@ -29,13 +31,15 @@ const UserList: React.FC = () => {
     handleSearch();
   }, []);
 
-  const handleChangeRole = async (userId: string, newRole: 'client' | 'manager' | 'admin') => {
+  const handleChangeRole = async (userId: string, newRole: UserRole) => {
     try {
+          // Преобразование userId в ObjectId для бэкенда
+    const userIdAsObjectId = new mongoose.Types.ObjectId(userId);
       // обновляем на сервере
-      const updated = await ProfileListApi.updateUserInfo(userId, { role: newRole } as Partial<User>);
+      const updated = await ProfileListApi.updateUserInfo(userIdAsObjectId.toString(), { role: newRole });
       // синхронизируем локальный стейт
       setUsers((prev) =>
-        prev.map((u) => (String(u._id) === String(userId) ? { ...u, role: updated.role } : u))
+        prev.map((u) => (u._id === userId ? { ...u, role: updated.role } : u))
       );
     } catch (e) {
       alert('Не удалось изменить роль пользователя');
@@ -74,7 +78,7 @@ const UserList: React.FC = () => {
           <tbody>
             {users && users.length > 0 ? (
               users.map((user, index) => (
-                <tr key={String(user._id)}>
+                <tr key={user._id}>
                   <td>{index + 1}</td>
                   <td>{user.name}</td>
                   <td>{user.email}</td>
@@ -87,7 +91,7 @@ const UserList: React.FC = () => {
                       <select
                         value={user.role}
                         onChange={(e) =>
-                          handleChangeRole(String(user._id), e.target.value as 'client' | 'manager' | 'admin')
+                          handleChangeRole(user._id, e.target.value as UserRole)
                         }
                       >
                         {roles.map((r) => (
