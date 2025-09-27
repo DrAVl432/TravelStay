@@ -78,48 +78,51 @@ export class SupportService {
     return message;
   }
 
-  async markMessagesAsRead(userId: string, supportRequestId: string, createdBefore: Date) {
-    const supportRequest = await this.supportRequestModel
-      .findById(supportRequestId)
-      .populate({ path: 'messages', model: this.messageModel })
-      .exec();
+async markMessagesAsRead(userId: string, supportRequestId: string, createdBefore: Date) {
+  const supportRequest = await this.supportRequestModel
+    .findById(supportRequestId)
+    .populate({ path: 'messages', model: this.messageModel })
+    .exec();
 
-    if (!supportRequest) {
-      throw new Error(`Обращение с ID "${supportRequestId}" не найдено.`);
-    }
+  if (!supportRequest) throw new Error(`Обращение с ID "${supportRequestId}" не найдено.`);
 
-    const messages = supportRequest.messages as Message[];
+  const before = new Date(createdBefore); // защита
+  const messages = supportRequest.messages as Message[];
 
-    const updatedMessages = messages.filter(
-      (msg: Message) => msg.author.toString() !== userId && msg.sentAt < createdBefore,
-    );
+  // Помечаем как прочитанные только входящие (от НЕ текущего пользователя) и только старше/равно before
+  const toUpdate = messages.filter((m) => {
+    const authorId = (m.author as any)?.toString?.() ?? String(m.author);
+    const sentAt = new Date(m.sentAt);
+    return authorId !== userId && !m.readAt && sentAt <= before;
+  });
 
-    const updatePromises = updatedMessages.map((msg: Message) => {
-      msg.readAt = new Date();
-      return this.messageModel.updateOne({ _id: msg._id }, { readAt: msg.readAt }).exec();
-    });
+  if (!toUpdate.length) return { markedAsRead: 0 };
 
-    await Promise.all(updatePromises);
+  const now = new Date();
 
-    return { markedAsRead: updatedMessages.length };
-  }
+  await this.messageModel.updateMany(
+    { _id: { $in: toUpdate.map(m => m._id) } },
+    { $set: { readAt: now } },
+  ).exec();
 
-  async getUnreadCount(supportRequestId: string) {
-    const supportRequest = await this.supportRequestModel
-      .findById(supportRequestId)
-      .populate('messages')
-      .exec();
+  return { markedAsRead: toUpdate.length };
+}
 
-    if (!supportRequest) {
-      throw new Error(`Обращение с ID "${supportRequestId}" не найдено.`);
-    }
+  async getUnreadCount(supportRequestId: string, userId: string) {
+  const supportRequest = await this.supportRequestModel
+    .findById(supportRequestId)
+    .populate('messages')
+    .exec();
 
-    const unreadMessages = (supportRequest.messages as Message[]).filter(
-      (message) => !message.readAt,
-    );
+  if (!supportRequest) throw new Error(`Обращение с ID "${supportRequestId}" не найдено.`);
 
-    return { unreadCount: unreadMessages.length };
-  }
+  const unread = (supportRequest.messages as Message[]).filter((m) => {
+    const authorId = (m.author as any)?.toString?.() ?? String(m.author);
+    return !m.readAt && authorId !== userId;
+  }).length;
+
+  return { unreadCount: unread };
+}
 
   async closeRequest(supportRequestId: string) {
     const supportRequest = await this.supportRequestModel.findById(supportRequestId).exec();
@@ -140,13 +143,24 @@ export class SupportService {
       .populate('messages')
       .exec();
 
-    return requests.map((request) => ({
-      id: request._id.toString(),
-      createdAt: request.createdAt,
-      isActive: request.isActive,
-      unreadCount: (request.messages as Message[]).filter((msg) => !msg.readAt).length,
-      firstMessage: (request.messages[0] as Message)?.text || 'Нет сообщений',
-    }));
+    return requests.map((request) => {
+      const clientId = request.user?.toString?.() ?? String(request.user);
+      const msgs = request.messages as Message[];
+
+      // Для клиента считаем непрочитанные от собеседника (не клиент)
+      const unreadFromManager = msgs.filter((m) => {
+        const authorId = (m.author as any)?.toString?.() ?? String(m.author);
+        return !m.readAt && authorId !== clientId;
+      }).length;
+
+      return {
+        id: request._id.toString(),
+        createdAt: request.createdAt,
+        isActive: request.isActive,
+        unreadCount: unreadFromManager,
+        firstMessage: (msgs[0] as Message)?.text || 'Нет сообщений',
+      };
+    });
   }
 
   async getManagerSupportRequests({ isActive }: GetChatListParams) {
@@ -156,19 +170,34 @@ export class SupportService {
       .populate('messages')
       .exec();
 
-    return requests.map((request) => ({
-      id: request._id.toString(),
-      createdAt: request.createdAt,
-      isActive: request.isActive,
-      client: {
-        id: request.user?._id.toString() || '',
-        name: request.user?.name || 'Неизвестно',
-        email: request.user?.email || 'Не указан',
-        contactPhone: request.user?.contactPhone || 'Не указан',
-      },
-      unreadCount: (request.messages as Message[]).filter((msg) => !msg.readAt).length,
-      firstMessage: (request.messages[0] as Message)?.text || '',
-    }));
+    return requests.map((request) => {
+      const clientId =
+        request.user?._id?.toString?.() ??
+        request.user?.toString?.() ??
+        '';
+
+      const msgs = request.messages as Message[];
+
+      // Для менеджера считаем непрочитанные от клиента
+      const unreadFromClient = msgs.filter((m) => {
+        const authorId = (m.author as any)?.toString?.() ?? String(m.author);
+        return !m.readAt && authorId === clientId;
+      }).length;
+
+      return {
+        id: request._id.toString(),
+        createdAt: request.createdAt,
+        isActive: request.isActive,
+        client: {
+          id: request.user?._id?.toString?.() || '',
+          name: (request.user as any)?.name || 'Неизвестно',
+          email: (request.user as any)?.email || 'Не указан',
+          contactPhone: (request.user as any)?.contactPhone || 'Не указан',
+        },
+        unreadCount: unreadFromClient,
+        firstMessage: (msgs[0] as Message)?.text || '',
+      };
+    });
   }
   
   async getSupportRequestDetails(supportRequestId: string) {

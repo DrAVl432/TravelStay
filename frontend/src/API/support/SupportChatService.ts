@@ -76,7 +76,7 @@ const SupportChatService = {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ user: userId, supportRequest: supportRequestId, createdBefore }),
+      body: JSON.stringify({ user: userId, supportRequest: supportRequestId, createdBefore: createdBefore.toISOString() }),
     });
 
     if (!response.ok) {
@@ -84,8 +84,8 @@ const SupportChatService = {
     }
   },
 
-  async getUnreadCount(chatId: string): Promise<number> {
-    const response = await fetch(`${API_URL}/api/support-requests/${chatId}/unread-count`);
+  async getUnreadCount(chatId: string, userId: string): Promise<number> {
+    const response = await fetch(`${API_URL}/api/support-requests/${chatId}/unread-count?userId=${encodeURIComponent(userId)}`);
 
     if (!response.ok) {
       throw new Error(`Ошибка при получении количества непрочитанных сообщений: ${response.statusText}`);

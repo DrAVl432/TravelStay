@@ -10,23 +10,22 @@ interface ChatModalProps {
   currentUserId: string;
 }
 
-Modal.setAppElement('#root');
-
 const ChatModal: React.FC<ChatModalProps> = ({ chatId, onClose, currentUserId }) => {
-  const [text, setText] = useState('');
+  const [text, setText] = useState<string>('');
+  const [closing, setClosing] = useState<boolean>(false);
 
   const handleSend = async () => {
     if (text.trim()) {
-      const newMessage = {
-        chatId,
-        author: currentUserId,
-        text,
-        sentAt: new Date().toISOString(),
-      };
-
       try {
+        const newMessage = {
+          _id: `${Date.now()}`,
+          author: currentUserId,
+          text: text.trim(),
+          sentAt: new Date().toISOString(),
+        };
+
         // Сохранение на сервере
-        await SupportChatService.sendMessage(chatId, currentUserId, text);
+        await SupportChatService.sendMessage(chatId, currentUserId, text.trim());
 
         // Отправка через WebSocket
         SocketService.sendMessage(chatId, newMessage);
@@ -37,6 +36,19 @@ const ChatModal: React.FC<ChatModalProps> = ({ chatId, onClose, currentUserId })
       }
     } else {
       console.warn('[ChatModal] Попытка отправить пустое сообщение');
+    }
+  };
+
+  const handleCloseRequest = async () => {
+    try {
+      setClosing(true);
+      await SupportChatService.closeRequest(chatId);
+      onClose(); // Родитель перезагрузит списки
+    } catch (e) {
+      console.error('[ChatModal] Ошибка при закрытии обращения:', e);
+      alert('Не удалось закрыть обращение');
+    } finally {
+      setClosing(false);
     }
   };
 
@@ -53,9 +65,19 @@ const ChatModal: React.FC<ChatModalProps> = ({ chatId, onClose, currentUserId })
           />
           <button onClick={handleSend}>Отправить</button>
         </div>
-        <button className="close-btn" onClick={onClose}>
-          Закрыть чат
-        </button>
+        <div className="actions" style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+          <button className="close-btn" onClick={onClose}>
+            Закрыть чат
+          </button>
+          <button
+            className="close-request-btn"
+            onClick={handleCloseRequest}
+            disabled={closing}
+            title="Перевести обращение в статус «Закрыто»"
+          >
+            {closing ? 'Закрываем...' : 'Закрыть обращение'}
+          </button>
+        </div>
       </div>
     </Modal>
   );

@@ -84,6 +84,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ id, currentUserId }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const currentUserIdNorm = normalizeId(currentUserId);
+
+  // helper: пометить как прочитанные все сообщения, пришедшие до времени последнего сообщения
+  const markAllAsRead = async () => {
+    try {
+      if (!messages.length) return;
+      const lastTime = new Date(messages[messages.length - 1].sentAt);
+      await SupportChatService.markMessagesAsRead(currentUserIdNorm, id, lastTime);
+    } catch (e) {
+      console.error('[ChatWindow] markAsRead:', e);
+    }
+  };
+
   // Инициализация
   useEffect(() => {
     let isMounted = true;
@@ -103,20 +116,29 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ id, currentUserId }) => {
         }));
 
         setMessages(msgsNormalized);
-        setRequestText(req?.text ?? '');
+        // В ваших сервисах getSupportRequestDetails возвращает { text }
+        setRequestText((req as any)?.text ?? '');
+
         setUsers((userList ?? []).map(normalizeUser));
+
+        // сразу помечаем как прочитанные всё, что уже загрузили
+        if ((msgsNormalized ?? []).length > 0) {
+          const lastTime = new Date(msgsNormalized[msgsNormalized.length - 1].sentAt);
+          await SupportChatService.markMessagesAsRead(currentUserIdNorm, id, lastTime);
+        }
       } catch (e) {
         console.error('[ChatWindow] Инициализация:', e);
       }
     })();
 
-    SocketService.connect(currentUserId);
+    SocketService.connect(currentUserIdNorm);
 
     return () => {
       isMounted = false;
       SocketService.disconnect();
     };
-  }, [id, currentUserId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, currentUserIdNorm]);
 
   // Подписка на чат
   useEffect(() => {
@@ -147,6 +169,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ id, currentUserId }) => {
       }
 
       setMessages(prev => [...prev, newMessage]);
+
+      // Если это входящее сообщение — сразу помечаем как прочитанное
+      if (authorId && authorId !== currentUserIdNorm) {
+        try {
+          const createdBefore = new Date(newMessage.sentAt);
+          await SupportChatService.markMessagesAsRead(currentUserIdNorm, id, createdBefore);
+        } catch (e) {
+          console.error('[ChatWindow] markAsRead on incoming:', e);
+        }
+      }
     };
 
     SocketService.subscribeToChat(id, handleNewMessage);
@@ -155,10 +187,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ id, currentUserId }) => {
       cancelled = true;
       SocketService.unsubscribeFromChat(handleNewMessage);
     };
-  }, [id, usersById]);
+  }, [id, usersById, currentUserIdNorm]);
 
   useEffect(() => {
     scrollToBottom();
+    // Дополнительно подчищаем непрочитанное, если все сообщения прокручены и показаны
+    markAllAsRead();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
   const getAuthorName = (authorIdRaw: any): string => {
@@ -166,8 +201,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ id, currentUserId }) => {
     const user = usersById.get(authorId);
     return user ? user.name : 'Загрузка...';
   };
-
-  const currentUserIdNorm = normalizeId(currentUserId);
 
   return (
     <div className="chat-window">

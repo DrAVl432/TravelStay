@@ -34,8 +34,8 @@ async markMessagesAsRead(
 
 
 @Get('/:id/unread-count')
-async getUnreadCount(@Param('id') supportRequestId: string) {
-  return await this.supportService.getUnreadCount(supportRequestId);
+async getUnreadCount(@Param('id') supportRequestId: string, @Query('userId') userId: string) {
+  return await this.supportService.getUnreadCount(supportRequestId, userId);
 }
 
 
