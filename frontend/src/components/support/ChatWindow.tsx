@@ -1,16 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import SupportChatService from '../../API/support/SupportChatService';
+import SupportChatService, { ChatMessage } from '../../API/support/SupportChatService';
 import { UserListApi } from '../../API/User/UserList.api';
 import SocketService from './SocketService';
 import { UserRole } from '../../../../backend/src/modules/user/enums/user-role.enum';
-
-interface Message {
-  _id: string;
-  text: string;
-  sentAt: string | number | Date;
-  readAt?: string | number | Date;
-  author: any; // приходит из сокета в разных форматах
-}
 
 interface User {
   _id: string;
@@ -21,43 +13,29 @@ interface User {
 interface ChatWindowProps {
   id: string;
   currentUserId: string;
+  onReadSync?: () => void;         // вызовем после успешного markRead, чтобы родитель обновил список
+  onStatusChange?: (isActive: boolean) => void; // сообщим о статусе обращения
 }
 
-// достать строковый ObjectId из разных возможных структур
-const extractId = (val: any): string | null => {
-  if (!val) return null;
-
+const normalizeId = (val: any): string => {
+  if (!val) return '';
   if (typeof val === 'string') return val.trim();
-
   if (typeof val === 'number') return String(val);
-
   if (typeof val === 'object') {
-    // Самый частый кейс: { _id: '...' }
     if (typeof val._id === 'string') return val._id.trim();
-
-    // { id: '...' }
     if (typeof val.id === 'string') return val.id.trim();
-
-    // Mongo Extended JSON: { _id: { $oid: '...' } }
     if (val._id && typeof val._id.$oid === 'string') return val._id.$oid.trim();
-
-    // Некоторые драйверы: { _id: { toString() } }
     if (val._id && typeof val._id.toString === 'function') {
       const s = String(val._id.toString()).trim();
       if (s && s !== '[object Object]') return s;
     }
-
-    // Сам объект может иметь toString верный
     if (typeof val.toString === 'function') {
       const s = String(val.toString()).trim();
       if (s && s !== '[object Object]') return s;
     }
   }
-
-  return null;
+  return '';
 };
-
-const normalizeId = (val: any): string => extractId(val) ?? '';
 
 const normalizeUser = (u: any): User => ({
   _id: normalizeId(u?._id ?? u?.id ?? u),
@@ -65,10 +43,11 @@ const normalizeUser = (u: any): User => ({
   role: u?.role,
 });
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ id, currentUserId }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+const ChatWindow: React.FC<ChatWindowProps> = ({ id, currentUserId, onReadSync, onStatusChange }) => {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [requestText, setRequestText] = useState<string>('');
+  const [isActive, setIsActive] = useState<boolean>(true);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const usersById = useMemo(() => {
@@ -80,54 +59,50 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ id, currentUserId }) => {
     return map;
   }, [users]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   const currentUserIdNorm = normalizeId(currentUserId);
 
-  // helper: пометить как прочитанные все сообщения, пришедшие до времени последнего сообщения
-  const markAllAsRead = async () => {
-    try {
-      if (!messages.length) return;
-      const lastTime = new Date(messages[messages.length - 1].sentAt);
-      await SupportChatService.markMessagesAsRead(currentUserIdNorm, id, lastTime);
-    } catch (e) {
-      console.error('[ChatWindow] markAsRead:', e);
-    }
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+  const markAllAsRead = async (upto?: Date) => {
+    if (!messages.length) return;
+    const lastTime = upto ?? new Date(messages[messages.length - 1].sentAt);
+    await SupportChatService.markMessagesAsRead(currentUserIdNorm, id, lastTime);
+    onReadSync?.();
   };
 
-  // Инициализация
   useEffect(() => {
     let isMounted = true;
 
     (async () => {
       try {
-        const [msgs, req, userList] = await Promise.all([
+        const [{ isActive, messages }, req, userList] = await Promise.all([
           SupportChatService.getMessages(id),
           SupportChatService.getSupportRequestDetails(id),
           UserListApi.fetchUsersInfo(),
         ]);
+
         if (!isMounted) return;
 
-        const msgsNormalized = (msgs ?? []).map((m: any) => ({
-          ...m,
-          author: normalizeId(m.author),
-        }));
+        setMessages(
+          (messages ?? []).map((m) => ({
+            ...m,
+            author: normalizeId(m.author),
+          }))
+        );
 
-        setMessages(msgsNormalized);
-        // В ваших сервисах getSupportRequestDetails возвращает { text }
-        setRequestText((req as any)?.text ?? '');
+        setRequestText((req as any)?.firstMessage ?? '');
+        setIsActive(isActive);
+        onStatusChange?.(isActive);
 
         setUsers((userList ?? []).map(normalizeUser));
 
-        // сразу помечаем как прочитанные всё, что уже загрузили
-        if ((msgsNormalized ?? []).length > 0) {
-          const lastTime = new Date(msgsNormalized[msgsNormalized.length - 1].sentAt);
+        if ((messages ?? []).length > 0) {
+          const lastTime = new Date(messages[messages.length - 1].sentAt);
           await SupportChatService.markMessagesAsRead(currentUserIdNorm, id, lastTime);
+          onReadSync?.();
         }
       } catch (e) {
-        console.error('[ChatWindow] Инициализация:', e);
+        console.error('[ChatWindow] init:', e);
       }
     })();
 
@@ -140,59 +115,51 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ id, currentUserId }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, currentUserIdNorm]);
 
-  // Подписка на чат
   useEffect(() => {
-    let cancelled = false;
-
-    const handleNewMessage = async (incoming: Message) => {
-      if (cancelled) return;
-
-      // Жестко нормализуем author
+    const handleNewMessage = async (incoming: any) => {
       const authorId = normalizeId(incoming.author);
-      const newMessage: Message = { ...incoming, author: authorId };
+      const newMessage: ChatMessage = {
+        _id: String(incoming._id ?? incoming.id ?? Date.now()),
+        text: incoming.text,
+        sentAt: incoming.sentAt,
+        readAt: incoming.readAt ?? null,
+        author: authorId,
+      };
 
-      // Диагностика: покажем сырое значение и нормализованное
-      try {
-        console.log('[WS] raw author =', incoming.author, 'normalized =', authorId, 'users keys =', [...usersById.keys()]);
-      } catch {}
-
-      // Если автор неизвестен — подтягиваем
       if (authorId && !usersById.has(authorId)) {
         try {
           const fetched = await UserListApi.fetchUserById(authorId);
-          if (cancelled) return;
           const normalizedFetched = normalizeUser(fetched);
-          setUsers(prev => (prev.some(u => normalizeId(u._id) === normalizedFetched._id) ? prev : [...prev, normalizedFetched]));
+          setUsers((prev) => (prev.some((u) => normalizeId(u._id) === normalizedFetched._id) ? prev : [...prev, normalizedFetched]));
         } catch (error) {
-          console.error('[ChatWindow] Ошибка загрузки пользователя:', error, 'authorId=', authorId);
+          console.error('[ChatWindow] user fetch error:', error);
         }
       }
 
-      setMessages(prev => [...prev, newMessage]);
+      setMessages((prev) => [...prev, newMessage]);
 
-      // Если это входящее сообщение — сразу помечаем как прочитанное
+      // входящее — помечаем до этого сообщения
       if (authorId && authorId !== currentUserIdNorm) {
         try {
           const createdBefore = new Date(newMessage.sentAt);
           await SupportChatService.markMessagesAsRead(currentUserIdNorm, id, createdBefore);
+          onReadSync?.();
         } catch (e) {
-          console.error('[ChatWindow] markAsRead on incoming:', e);
+          console.error('[ChatWindow] markAsRead incoming:', e);
         }
       }
     };
 
     SocketService.subscribeToChat(id, handleNewMessage);
-
     return () => {
-      cancelled = true;
       SocketService.unsubscribeFromChat(handleNewMessage);
     };
-  }, [id, usersById, currentUserIdNorm]);
+  }, [id, usersById, currentUserIdNorm, onReadSync]);
 
   useEffect(() => {
     scrollToBottom();
-    // Дополнительно подчищаем непрочитанное, если все сообщения прокручены и показаны
-    markAllAsRead();
+    // когда дорисовали — подстрахуемся и отметим все
+    markAllAsRead().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
@@ -206,21 +173,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ id, currentUserId }) => {
     <div className="chat-window">
       <div className="chat-header">
         <h3>Обращение: {requestText}</h3>
+        {!isActive && <div style={{ color: '#c00', fontSize: 12 }}>Обращение закрыто</div>}
       </div>
       <div className="chat-messages">
         {messages.map((msg) => {
-          const msgAuthorNorm = normalizeId(msg.author);
+          const mine = msg.author === currentUserIdNorm;
           return (
             <div key={msg._id}>
-              <div className={`message-container ${msgAuthorNorm === currentUserIdNorm ? 'current-user' : 'other-user'}`}>
-                {msgAuthorNorm !== currentUserIdNorm && (
-                  <div className="message-author">{getAuthorName(msg.author)}</div>
-                )}
+              <div className={`message-container ${mine ? 'current-user' : 'other-user'}`}>
+                {!mine && <div className="message-author">{getAuthorName(msg.author)}</div>}
                 <div className="message">
                   <div className="message-text">{msg.text}</div>
-                  <div className="message-time">
-                    {new Date(msg.sentAt).toLocaleTimeString()}
-                  </div>
+                  <div className="message-time">{new Date(msg.sentAt).toLocaleTimeString()}</div>
                 </div>
               </div>
             </div>

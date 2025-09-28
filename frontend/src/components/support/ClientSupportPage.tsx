@@ -1,44 +1,47 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import ChatModal from '../support/ChatModal';
 import SupportChatService from '../../API/support/SupportChatService';
+import { useAuth } from '../../context/AuthContext';
 
 type StatusFilter = 'all' | 'open' | 'closed';
 
-interface SupportRequest {
+interface ManagerSupportRequest {
   id: string;
   createdAt: string;
   isActive: boolean;
+  client: {
+    id: string;
+    name: string;
+    contactPhone?: string;
+    email?: string;
+  };
   firstMessage?: string;
-  // Бэкенд может вернуть либо unreadCountFromManager (предпочтительно),
-  // либо общий unreadCount — нормализуем в unreadCountFromManager
-  unreadCountFromManager?: number;
-  unreadCount?: number;
+  unreadCountFromClient?: number;
 }
 
-const ClientSupportPage: React.FC = () => {
+const ManagerSupportPage: React.FC = () => {
   const { user } = useAuth();
-
-  const [requests, setRequests] = useState<SupportRequest[]>([]);
+  const [requests, setRequests] = useState<ManagerSupportRequest[]>([]);
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const managerId = useMemo(() => (user?.id ? String(user.id) : ''), [user?.id]);
+
   const fetchRequests = async () => {
-    if (!user?.id) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await SupportChatService.getClientSupportRequests(user.id);
-      const normalized: SupportRequest[] = (data || []).map((r: any) => ({
-        ...r,
+      const data = await SupportChatService.getManagerSupportRequests();
+      const normalized: ManagerSupportRequest[] = (data || []).map((r: any) => ({
+        id: r.id,
+        createdAt: r.createdAt,
+        isActive: r.isActive,
+        client: r.client,
         firstMessage: r.firstMessage ?? '',
-        unreadCountFromManager:
-          typeof r.unreadCountFromManager === 'number'
-            ? r.unreadCountFromManager
-            : (typeof r.unreadCount === 'number' ? r.unreadCount : 0),
+        unreadCountFromClient: Number(r.unreadCountFromClient ?? r.unreadCount ?? 0),
       }));
       setRequests(normalized);
     } catch (e) {
@@ -51,10 +54,8 @@ const ClientSupportPage: React.FC = () => {
 
   useEffect(() => {
     fetchRequests();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, []);
 
-  // Автообновление при возврате/фокусе
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === 'visible') fetchRequests();
@@ -68,8 +69,7 @@ const ClientSupportPage: React.FC = () => {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('popstate', onPop);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, []);
 
   const filteredRequests = useMemo(() => {
     return requests.filter((request) => {
@@ -78,72 +78,51 @@ const ClientSupportPage: React.FC = () => {
     });
   }, [requests, statusFilter]);
 
-  const openChat = (requestId: string) => {
-    setSelectedChat(requestId);
-  };
+  const openChat = (requestId: string) => setSelectedChat(requestId);
 
   const closeChat = async () => {
     setSelectedChat(null);
-    await fetchRequests(); // после закрытия обновим счетчики
+    await fetchRequests();
   };
 
-  const handleCreateRequest = async () => {
-    const newRequest = prompt('Введите текст обращения:');
-    if (newRequest && user?.id) {
-      try {
-        await SupportChatService.createSupportRequest(user.id, newRequest);
-        await fetchRequests();
-      } catch (e) {
-        console.error(e);
-        alert('Ошибка при создании обращения');
-      }
-    }
+  const syncRequests = async () => {
+    await fetchRequests();
   };
 
   return (
     <div>
-      <h2>Мои обращения</h2>
+      <h2>Обращения пользователей</h2>
 
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
-        <button onClick={handleCreateRequest}>Создать обращение</button>
-
-        <label>
-          Фильтр по статусу:{' '}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          >
-            <option value="all">Все</option>
-            <option value="open">Открытые</option>
-            <option value="closed">Закрытые</option>
-          </select>
-        </label>
-      </div>
+      <label>
+        Фильтр по статусу:{' '}
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
+          <option value="all">Все</option>
+          <option value="open">Открытые</option>
+          <option value="closed">Закрытые</option>
+        </select>
+      </label>
 
       {loading && <div>Загрузка...</div>}
       {error && <div style={{ color: 'red' }}>{error}</div>}
 
       {!loading && !error && (
         <div style={{ overflowX: 'auto', marginTop: 12 }}>
-          <table
-            style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              minWidth: 900,
-            }}
-          >
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
             <thead>
               <tr>
                 <th style={th}>№ обращения</th>
                 <th style={th}>Обращение</th>
+                <th style={th}>Имя</th>
+                <th style={th}>номер телефона</th>
+                <th style={th}>mail</th>
                 <th style={th}>Статус обращения</th>
-                <th style={th}>количество не прочитанных сообщений собеседника</th>
+                <th style={th}>Непрочитанные от клиента</th>
               </tr>
             </thead>
             <tbody>
               {filteredRequests.length === 0 ? (
                 <tr>
-                  <td style={td} colSpan={4}>
+                  <td style={td} colSpan={7}>
                     Нет данных
                   </td>
                 </tr>
@@ -151,24 +130,19 @@ const ClientSupportPage: React.FC = () => {
                 filteredRequests.map((req) => (
                   <tr key={req.id}>
                     <td style={td}>
-                      <button
-                        onClick={() => openChat(req.id)}
-                        title="Открыть чат"
-                        style={linkLikeBtn}
-                      >
+                      <button onClick={() => openChat(req.id)} title="Открыть чат" style={linkLikeBtn}>
                         {req.id}
                       </button>
                     </td>
                     <td style={td}>{req.firstMessage || '—'}</td>
+                    <td style={td}>{req.client?.name ?? '—'}</td>
+                    <td style={td}>{req.client?.contactPhone ?? '—'}</td>
+                    <td style={td}>{req.client?.email ?? '—'}</td>
                     <td style={td}>{req.isActive ? 'Открыто' : 'Закрыто'}</td>
                     <td style={td}>
-                      {(req.unreadCountFromManager ?? 0) > 0 ? (
-                        <button
-                          onClick={() => openChat(req.id)}
-                          title="Перейти в чат"
-                          style={pillBtn}
-                        >
-                          {req.unreadCountFromManager}
+                      {(req.unreadCountFromClient ?? 0) > 0 ? (
+                        <button onClick={() => openChat(req.id)} title="Перейти в чат" style={pillBtn}>
+                          {req.unreadCountFromClient}
                         </button>
                       ) : (
                         0
@@ -186,7 +160,8 @@ const ClientSupportPage: React.FC = () => {
         <ChatModal
           chatId={selectedChat}
           onClose={closeChat}
-          currentUserId={user?.id || 'Гость'}
+          currentUserId={managerId}
+          onSync={syncRequests}
         />
       )}
     </div>
@@ -225,4 +200,4 @@ const linkLikeBtn: React.CSSProperties = {
   textDecoration: 'underline',
 };
 
-export default ClientSupportPage;
+export default ManagerSupportPage;

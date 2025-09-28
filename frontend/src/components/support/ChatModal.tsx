@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Modal from 'react-modal';
 import ChatWindow from './ChatWindow';
 import SupportChatService from '../../API/support/SupportChatService';
@@ -8,34 +8,40 @@ interface ChatModalProps {
   chatId: string;
   onClose: () => void;
   currentUserId: string;
+  onSync?: () => void; // новый проп: обновление списков без закрытия
 }
 
-const ChatModal: React.FC<ChatModalProps> = ({ chatId, onClose, currentUserId }) => {
+const ChatModal: React.FC<ChatModalProps> = ({ chatId, onClose, currentUserId, onSync }) => {
   const [text, setText] = useState<string>('');
   const [closing, setClosing] = useState<boolean>(false);
+  const [isActive, setIsActive] = useState<boolean>(true);
+
+  useEffect(() => {
+    // при открытии узнаем статус, чтобы сразу корректно отрисовать
+    SupportChatService.getSupportRequestDetails(chatId)
+      .then((d) => setIsActive(d.isActive))
+      .catch(() => {});
+  }, [chatId]);
 
   const handleSend = async () => {
-    if (text.trim()) {
-      try {
-        const newMessage = {
-          _id: `${Date.now()}`,
-          author: currentUserId,
-          text: text.trim(),
-          sentAt: new Date().toISOString(),
-        };
+    if (!isActive) return; // запрет на фронте
+    const trimmed = text.trim();
+    if (!trimmed) return;
 
-        // Сохранение на сервере
-        await SupportChatService.sendMessage(chatId, currentUserId, text.trim());
+    try {
+      const newMessage = {
+        _id: `${Date.now()}`,
+        author: currentUserId,
+        text: trimmed,
+        sentAt: new Date().toISOString(),
+      };
 
-        // Отправка через WebSocket
-        SocketService.sendMessage(chatId, newMessage);
-
-        setText('');
-      } catch (error) {
-        console.error('[ChatModal] Ошибка при отправке сообщения:', error);
-      }
-    } else {
-      console.warn('[ChatModal] Попытка отправить пустое сообщение');
+      await SupportChatService.sendMessage(chatId, currentUserId, trimmed);
+      SocketService.sendMessage(chatId, newMessage);
+      setText('');
+    } catch (error: any) {
+      alert(error?.message || 'Ошибка при отправке сообщения');
+      console.error('[ChatModal] Ошибка при отправке сообщения:', error);
     }
   };
 
@@ -43,6 +49,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ chatId, onClose, currentUserId })
     try {
       setClosing(true);
       await SupportChatService.closeRequest(chatId);
+      setIsActive(false);
       onClose(); // Родитель перезагрузит списки
     } catch (e) {
       console.error('[ChatModal] Ошибка при закрытии обращения:', e);
@@ -53,17 +60,30 @@ const ChatModal: React.FC<ChatModalProps> = ({ chatId, onClose, currentUserId })
   };
 
   return (
-    <Modal isOpen={true} onRequestClose={onClose} className="chat-modal">
+    <Modal
+      isOpen={true}
+      onRequestClose={onClose}
+      className="chat-modal"
+      shouldCloseOnOverlayClick={false}
+    >
       <div className="chat-modal-content">
-        <ChatWindow id={chatId} currentUserId={currentUserId} />
+        <ChatWindow
+          id={chatId}
+          currentUserId={currentUserId}
+          onReadSync={onSync /* вместо onClose */}
+          onStatusChange={setIsActive}
+        />
         <div className="input-area">
           <input
             type="text"
             value={text}
+            disabled={!isActive}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Введите сообщение..."
+            placeholder={isActive ? 'Введите сообщение...' : 'Обращение закрыто'}
           />
-          <button onClick={handleSend}>Отправить</button>
+          <button onClick={handleSend} disabled={!isActive || !text.trim()}>
+            Отправить
+          </button>
         </div>
         <div className="actions" style={{ display: 'flex', gap: 8, marginTop: 8 }}>
           <button className="close-btn" onClick={onClose}>
@@ -72,7 +92,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ chatId, onClose, currentUserId })
           <button
             className="close-request-btn"
             onClick={handleCloseRequest}
-            disabled={closing}
+            disabled={closing || !isActive}
             title="Перевести обращение в статус «Закрыто»"
           >
             {closing ? 'Закрываем...' : 'Закрыть обращение'}

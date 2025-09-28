@@ -17,11 +17,10 @@ interface ManagerSupportRequest {
   };
   firstMessage?: string;
   unreadCountFromClient?: number;
-  unreadCount?: number;
 }
 
 const ManagerSupportPage: React.FC = () => {
-  const { user } = useAuth(); // предполагается, что есть user?.id — строковый id менеджера
+  const { user } = useAuth();
   const [requests, setRequests] = useState<ManagerSupportRequest[]>([]);
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
 
@@ -29,7 +28,6 @@ const ManagerSupportPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Единственное важное изменение: использовать реальный id менеджера
   const managerId = useMemo(() => (user?.id ? String(user.id) : ''), [user?.id]);
 
   const fetchRequests = async () => {
@@ -38,12 +36,12 @@ const ManagerSupportPage: React.FC = () => {
     try {
       const data = await SupportChatService.getManagerSupportRequests();
       const normalized: ManagerSupportRequest[] = (data || []).map((r: any) => ({
-        ...r,
+        id: r.id,
+        createdAt: r.createdAt,
+        isActive: r.isActive,
+        client: r.client,
         firstMessage: r.firstMessage ?? '',
-        unreadCountFromClient:
-          typeof r.unreadCountFromClient === 'number'
-            ? r.unreadCountFromClient
-            : (typeof r.unreadCount === 'number' ? r.unreadCount : 0),
+        unreadCountFromClient: Number(r.unreadCountFromClient ?? r.unreadCount ?? 0),
       }));
       setRequests(normalized);
     } catch (e) {
@@ -60,9 +58,7 @@ const ManagerSupportPage: React.FC = () => {
 
   useEffect(() => {
     const onVisible = () => {
-      if (document.visibilityState === 'visible') {
-        fetchRequests();
-      }
+      if (document.visibilityState === 'visible') fetchRequests();
     };
     const onPop = () => fetchRequests();
 
@@ -82,13 +78,15 @@ const ManagerSupportPage: React.FC = () => {
     });
   }, [requests, statusFilter]);
 
-  const openChat = (requestId: string) => {
-    setSelectedChat(requestId);
-  };
+  const openChat = (requestId: string) => setSelectedChat(requestId);
 
   const closeChat = async () => {
     setSelectedChat(null);
-    await fetchRequests(); // обновим список
+    await fetchRequests();
+  };
+
+  const syncRequests = async () => {
+    await fetchRequests();
   };
 
   return (
@@ -97,10 +95,7 @@ const ManagerSupportPage: React.FC = () => {
 
       <label>
         Фильтр по статусу:{' '}
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-        >
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
           <option value="all">Все</option>
           <option value="open">Открытые</option>
           <option value="closed">Закрытые</option>
@@ -112,13 +107,7 @@ const ManagerSupportPage: React.FC = () => {
 
       {!loading && !error && (
         <div style={{ overflowX: 'auto', marginTop: 12 }}>
-          <table
-            style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              minWidth: 900,
-            }}
-          >
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
             <thead>
               <tr>
                 <th style={th}>№ обращения</th>
@@ -127,7 +116,7 @@ const ManagerSupportPage: React.FC = () => {
                 <th style={th}>номер телефона</th>
                 <th style={th}>mail</th>
                 <th style={th}>Статус обращения</th>
-                <th style={th}>количество не прочитанных сообщений собеседника</th>
+                <th style={th}>Непрочитанные от клиента</th>
               </tr>
             </thead>
             <tbody>
@@ -141,11 +130,7 @@ const ManagerSupportPage: React.FC = () => {
                 filteredRequests.map((req) => (
                   <tr key={req.id}>
                     <td style={td}>
-                      <button
-                        onClick={() => openChat(req.id)}
-                        title="Открыть чат"
-                        style={linkLikeBtn}
-                      >
+                      <button onClick={() => openChat(req.id)} title="Открыть чат" style={linkLikeBtn}>
                         {req.id}
                       </button>
                     </td>
@@ -156,11 +141,7 @@ const ManagerSupportPage: React.FC = () => {
                     <td style={td}>{req.isActive ? 'Открыто' : 'Закрыто'}</td>
                     <td style={td}>
                       {(req.unreadCountFromClient ?? 0) > 0 ? (
-                        <button
-                          onClick={() => openChat(req.id)}
-                          title="Перейти в чат"
-                          style={pillBtn}
-                        >
+                        <button onClick={() => openChat(req.id)} title="Перейти в чат" style={pillBtn}>
                           {req.unreadCountFromClient}
                         </button>
                       ) : (
@@ -179,8 +160,8 @@ const ManagerSupportPage: React.FC = () => {
         <ChatModal
           chatId={selectedChat}
           onClose={closeChat}
-          // ключевое: передаём корректный id автора (менеджера), а не 'manager'
           currentUserId={managerId}
+          onSync={syncRequests}
         />
       )}
     </div>
